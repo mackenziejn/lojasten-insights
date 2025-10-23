@@ -9,6 +9,12 @@ import logging
 import json
 from logging.handlers import RotatingFileHandler
 
+# Debug: verificar estrutura de arquivos
+st.write("Diretório atual:", os.getcwd())
+st.write("Arquivos no diretório:", os.listdir("."))
+st.write("Arquivos em Vendas_teste:", os.listdir("Vendas_teste") if os.path.exists("Vendas_teste") else "Pasta não existe")
+st.write("Arquivos em Vendas_teste/data:", os.listdir("Vendas_teste/data") if os.path.exists("Vendas_teste/data") else "Pasta não existe")
+
 # 🔹 Adiciona o diretório pai de 'src' ao path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -665,9 +671,67 @@ else:
     else:
         #st.subheader("Carregando dados")
         df = carregar_dados_sqlite()
+
+        # Se não há dados no banco, tentar carregar automaticamente do CSV
         if df.empty:
-            st.warning("⚠️ Nenhum dado encontrado.")
-            st.stop()
+            csv_path = os.path.join(os.path.dirname(__file__), "..", "data", "raw", "vendas_clean.csv")
+            if os.path.exists(csv_path):
+                st.info("🔄 Carregando dados automaticamente do arquivo CSV...")
+                try:
+                    # Carregar e processar CSV automaticamente
+                    df_csv = pd.read_csv(csv_path, sep=";", dtype=str)
+
+                    # Validar e padronizar estrutura
+                    df_csv = validar_e_padronizar_csv(df_csv)
+
+                    # Processar dados (correção e validação)
+                    linhas_corrigidas = []
+                    for _, row in df_csv.iterrows():
+                        row = corrigir_linha(row)
+                        erros = validar_linha(row)
+                        row_dict = row.to_dict()
+                        row_dict['erros'] = ", ".join(erros) if erros else ""
+                        linhas_corrigidas.append(row_dict)
+
+                    df = pd.DataFrame(linhas_corrigidas)
+
+                    # Limpeza e formatação
+                    df["nome_cliente"] = df["nome_cliente"].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else "")
+                    df["bairro"] = df["bairro"].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else "")
+                    df["cidade"] = df["cidade"].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else "")
+                    df["forma_pagamento"] = df["forma_pagamento"].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else "")
+                    df["nome_vendedor"] = df["nome_vendedor"].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else "")
+                    df["endereco"] = df.apply(lambda x: str(x["endereco"]).split(",")[0] if pd.notna(x["endereco"]) else "", axis=1)
+                    df["telefone"] = df["telefone"].astype(str).str.extract(r'(\d{10,11})')[0]
+
+                    # Datas
+                    for coluna in ["data_compra", "data_venda"]:
+                        df[coluna + "_dt"] = pd.to_datetime(df[coluna], format="%d/%m/%Y", errors="coerce")
+                        df[coluna] = df[coluna + "_dt"].dt.strftime("%d/%m/%Y")
+
+                    def preencher_data_nascimento(valor):
+                        try:
+                            dt = pd.to_datetime(valor, dayfirst=True, errors='coerce')
+                            if pd.isna(dt):
+                                idade = random.randint(18, 65)
+                                ano = pd.Timestamp.today().year - idade
+                                mes = random.randint(1, 12)
+                                dia = random.randint(1, 28)
+                                dt = pd.Timestamp(year=ano, month=mes, day=dia)
+                            return dt.strftime("%d/%m/%Y")
+                        except:
+                            return ""
+                    df["data_nascimento"] = df["data_nascimento"].apply(preencher_data_nascimento)
+
+                    st.success("✅ Dados carregados automaticamente do CSV!")
+
+                except Exception as e:
+                    st.error(f"❌ Erro ao carregar CSV automaticamente: {e}")
+                    st.warning("⚠️ Nenhum dado encontrado. Use 'Importar Dados' para carregar um arquivo CSV.")
+                    st.stop()
+            else:
+                st.warning("⚠️ Nenhum dado encontrado. Use 'Importar Dados' para carregar um arquivo CSV.")
+                st.stop()
 
     # 🔹 Executar Pipeline (sempre disponível após carregamento dos dados)
     with st.expander("Executar Pipeline", expanded=False):
