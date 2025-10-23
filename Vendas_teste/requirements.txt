@@ -1,0 +1,17 @@
+pandas
+numpy>=1.26,<2
+faker
+matplotlib
+seaborn
+plotly
+jupyter
+openpyxl
+selenium
+dash
+streamlit
+bokeh
+rpy2
+altair
+reportlab
+pillow
+unidecode
