@@ -1,279 +1,171 @@
-# Vendas Teste - Pipeline ETL e Dashboard de Vendas
+# LojasTen Insights 📊
 
-Este projeto implementa um pipeline ETL completo para processamento de dados de vendas, com validação de dados, geração de relatórios e um dashboard interativo em Streamlit para análise de vendas.
+Dashboard interativo para análise de dados de vendas de múltiplas lojas, com sistema de autenticação e permissões.
 
-## 📋 Visão Geral
+## 🌟 Funcionalidades
 
-O sistema processa dados de vendas de múltiplas lojas, realiza limpeza e validação dos dados, armazena em banco SQLite e fornece insights através de dashboards interativos. Suporta múltiplos usuários com diferentes níveis de permissão.
+- **📈 Análise Visual**: Gráficos interativos com Plotly
+- **🔐 Sistema de Autenticação**: Usuários com perfis e permissões
+- **📊 Indicadores KPI**: Valor total, ticket médio, top produtos/lojas/vendedores
+- **🔍 Filtros Avançados**: Por loja, vendedor, data, produto, forma de pagamento
+- **📤 Exportação**: Dados filtrados em CSV
+- **⚙️ Gerenciamento**: Painel admin para usuários e configurações
+- **☁️ Integração Dropbox**: Upload automático de relatórios
 
-## 🏗️ Arquitetura
+## 🚀 Deploy na Nuvem
 
-```
-Vendas_teste/
-├── assets/                 # Recursos visuais (logos, imagens)
-├── dashboard/
-│   └── app.py             # Dashboard Streamlit principal
-├── data/
-│   ├── raw/               # Dados brutos de entrada (CSV)
-│   ├── processed/         # Dados tratados após processamento
-│   ├── archived/          # Dados históricos arquivados
-│   ├── reports/           # Relatórios gerados (PDF, CSV)
-│   └── db/                # Banco de dados SQLite
-├── scripts/               # Scripts utilitários
-├── src/                   # Código fonte principal
-│   ├── db_utils.py        # Utilitários de banco de dados
-│   ├── etl.py            # Extração e transformação de dados
-│   ├── pipeline.py       # Pipeline principal de processamento
-│   ├── validacao.py      # Validação e correção de dados
-│   ├── gerador_dados.py  # Geração de dados de teste
-│   └── dropbox_upload.py # Integração com Dropbox
-├── tests/                 # Testes automatizados
-├── venv_vendas/          # Ambiente virtual (opcional)
-├── main.py               # Ponto de entrada CLI
-├── requirements.txt      # Dependências Python
-├── Makefile             # Comandos de automação
-├── run_pipeline.sh      # Script de execução do pipeline
-└── README.md            # Esta documentação
-```
+### Streamlit Cloud (Recomendado)
 
-## 🚀 Instalação e Configuração
-
-### Pré-requisitos
-
-- Python 3.8+
-- pip
-- SQLite3
-
-### Instalação
-
-1. **Clone o repositório:**
+1. **Crie um repositório no GitHub**
    ```bash
-   git clone <repository-url>
-   cd Vendas_teste
+   # Clone ou crie seu repo
+   git init
+   git add .
+   git commit -m "Initial commit"
+   git remote add origin https://github.com/SEU_USUARIO/lojasten-insights.git
+   git push -u origin main
    ```
 
-2. **Crie e ative o ambiente virtual (recomendado):**
+2. **Deploy no Streamlit Cloud**
+   - Acesse: https://share.streamlit.io/
+   - Conecte sua conta GitHub
+   - Selecione o repositório `lojasten-insights`
+   - Configure:
+     - **Main file**: `dashboard/app.py`
+     - **Python version**: 3.9
+   - Clique em "Deploy"
+
+3. **URL Personalizada**
+   - Seu app ficará em: `https://lojasten.streamlit.app`
+   - Para URL personalizada, use um domínio próprio
+
+### Railway (Alternativa)
+
+1. **Deploy no Railway**
    ```bash
-   python3 -m venv venv_vendas
-   source venv_vendas/bin/activate  # Linux/Mac
-   # ou
-   venv_vendas\Scripts\activate     # Windows
+   # Instalar Railway CLI
+   npm install -g @railway/cli
+
+   # Login e deploy
+   railway login
+   railway init
+   railway up
    ```
 
-3. **Instale as dependências:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+2. **Configurar variáveis de ambiente**
+   - No painel Railway, adicione variáveis se necessário
 
-4. **Execute as migrações do banco:**
-   ```bash
-   python main.py migrate
-   ```
-
-## 📊 Uso
-
-### Interface de Linha de Comando (CLI)
-
-O sistema oferece múltiplos comandos via `main.py`:
-
-#### Processamento de Dados
-```bash
-# Executar pipeline completo
-python main.py run
-
-# Executar pipeline com geração de dados de exemplo
-python main.py run --generate-sample --sample-size 200
-
-# Apenas gerar dados de exemplo
-python main.py generate-sample --sample-size 100
-
-# Validação sem salvar no banco (dry-run)
-python main.py dry-run
-
-# Executar migrações do banco
-python main.py migrate
-```
-
-#### Gerenciamento de Lojas e Vendedores
-```bash
-# Listar mapeamentos loja-vendedor
-python -m src.admin list-mappings [--codigo_loja L01]
-
-# Desbloquear loja
-python -m src.admin unlock L01
-
-# Bloquear loja
-python -m src.admin lock L01
-
-# Reatribuir vendedor
-python -m src.admin reassign-seller L01 V_old V_new
-```
-
-### Dashboard Interativo
-
-Execute o dashboard Streamlit:
+## 🛠️ Instalação Local
 
 ```bash
+# Clone o repositório
+git clone https://github.com/SEU_USUARIO/lojasten-insights.git
+cd lojasten-insights
+
+# Execute o setup
+./setup.sh
+
+# Instale dependências
+pip install -r requirements_cloud.txt
+
+# Execute o app
 streamlit run dashboard/app.py
 ```
 
-#### Funcionalidades do Dashboard
+## 👥 Usuários Padrão
 
-- **Autenticação:** Sistema de login com usuários e permissões
-- **Upload de CSV:** Importação de novos dados de vendas
-- **Filtros Avançados:** Por loja, vendedor, data, produto, forma de pagamento
-- **Indicadores:** Métricas de vendas, ticket médio, top produtos/lojas/vendedores
-- **Gráficos Interativos:** Evolução temporal, distribuição por formas de pagamento, análise por produto
-- **Execução de Pipeline:** Possibilidade de executar o processamento diretamente da interface
-- **Relatórios:** Geração e download de relatórios em PDF
-- **Gerenciamento de Usuários:** Interface para admins gerenciarem usuários e permissões
+| Usuário | Senha | Perfil | Permissões |
+|---------|-------|--------|------------|
+| admin | senha123 | Administrador | Todas |
+| mackenzie | vendas2025 | Gerente | Limitadas |
 
-#### Perfis de Usuário
+## 📁 Estrutura do Projeto
 
-- **Admin:** Acesso completo a todas as funcionalidades
-- **Manager:** Acesso limitado à sua loja, sem upload de CSV
-- **User:** Acesso apenas leitura, limitado aos próprios dados
-
-### Automação com Makefile
-
-```bash
-# Criar ambiente virtual e instalar dependências
-make venv
-
-# Executar testes
-make test
-
-# Executar pipeline
-make run
-
-# Executar dry-run
-make dry-run
-
-# Iniciar dashboard
-make dashboard
-
-# Executar migrações
-make migrate
-
-# Agregar dados duplicados
-make aggregate
 ```
-
-### Script de Automação
-
-Para execução automatizada em servidores:
-
-```bash
-# Executar pipeline completo
-./run_pipeline.sh
+Vendas_teste/
+├── dashboard/
+│   └── app.py                 # App principal Streamlit
+├── src/
+│   ├── pipeline.py            # Pipeline ETL
+│   ├── db_utils.py            # Utilitários banco de dados
+│   ├── validacao.py           # Validação e correção de dados
+│   ├── gerador_dados.py       # Geração de dados fake
+│   ├── users_manager.py       # Gerenciamento de usuários
+│   └── dropbox_upload.py      # Integração Dropbox
+├── data/
+│   ├── db/                    # Banco SQLite
+│   ├── raw/                   # Dados brutos
+│   ├── processed/             # Dados processados
+│   ├── reports/               # Relatórios gerados
+│   └── logs/                  # Logs da aplicação
+├── .streamlit/
+│   ├── config.toml           # Configurações Streamlit
+│   └── secrets.toml          # Segredos (API keys, etc.)
+├── requirements_cloud.txt     # Dependências para nuvem
+├── setup.sh                  # Script de setup
+└── README.md                 # Esta documentação
 ```
 
 ## 🔧 Configuração
 
 ### Banco de Dados
+- **Local**: SQLite (`data/db/vendas.db`)
+- **Nuvem**: Persistido automaticamente no Streamlit Cloud
 
-O sistema utiliza SQLite. As tabelas são criadas automaticamente na primeira execução:
+### Autenticação
+- Usuários armazenados no banco SQLite
+- Perfis: Admin, Manager, User
+- Permissões granulares por funcionalidade
 
-- `vendas`: Dados principais das vendas
-- `produtos`: Catálogo de produtos
-- `lojas`: Informações das lojas
-- `vendedores`: Dados dos vendedores
-- `loja_vendedor`: Relacionamentos entre lojas e vendedores
-- `usuarios`: Sistema de autenticação
+### Dropbox (Opcional)
+Para habilitar upload de relatórios:
+1. Crie um app no [Dropbox App Console](https://www.dropbox.com/developers/apps)
+2. Gere um token de acesso
+3. Adicione no `.streamlit/secrets.toml`:
+   ```toml
+   [dropbox]
+   token = "SEU_TOKEN_AQUI"
+   ```
 
-### Logs
+## 📊 Funcionalidades por Perfil
 
-- **Batch logs:** `data/logs/batch.log` (rotativo, 5MB, 5 backups)
-- **Web logs:** `data/logs/web.log` (rotativo, 2MB, 3 backups)
-- **Duplicatas:** `data/reports/duplicates.csv` e `duplicates.log`
+### 👑 Administrador
+- ✅ Todas as funcionalidades
+- ✅ Gerenciamento de usuários
+- ✅ Execução de pipeline
+- ✅ Upload de CSV
+- ✅ Análise de todas as lojas
 
-### Dropbox Integration
+### 👨‍💼 Gerente
+- ✅ Filtros e indicadores
+- ✅ Gráficos e análises
+- ✅ Execução de pipeline
+- ❌ Gerenciamento de usuários
+- ❌ Upload de CSV
 
-Para upload automático de relatórios:
-
-1. Configure o token do Dropbox em `Token DropBox.docx`
-2. Execute pipeline com `--enviar-dropbox`
-
-## 📈 Pipeline de Processamento
-
-1. **Extração:** Leitura do CSV de entrada
-2. **Validação:** Verificação de integridade dos dados
-3. **Correção:** Padronização e limpeza automática
-4. **Inserção:** Armazenamento no banco de dados
-5. **Relatórios:** Geração de PDFs e CSVs de qualidade
-6. **Arquivamento:** Movimentação de arquivos processados
-
-### Validações Implementadas
-
-- CPF válido e único
-- Datas em formato correto
-- Valores numéricos positivos
-- Campos obrigatórios preenchidos
-- Relacionamentos consistentes (loja-vendedor)
-
-## 📋 Formato dos Dados
-
-### CSV de Entrada
-
-Colunas obrigatórias:
-- `id_cliente`, `nome_cliente`, `data_nascimento`, `rg`, `cpf`
-- `endereco`, `numero`, `complemento`, `bairro`, `cidade`, `estado`, `cep`, `telefone`
-- `codigo_produto`, `nome_produto`, `quantidade`, `valor_produto`
-- `forma_pagamento`, `codigo_loja`, `nome_loja`, `codigo_vendedor`, `nome_vendedor`
-- `data_venda`, `data_compra`, `status_venda`, `observacoes`
-
-### Exemplo de Dados
-
-```csv
-id_cliente,nome_cliente,data_nascimento,rg,cpf,endereco,numero,complemento,bairro,cidade,estado,cep,telefone,codigo_produto,nome_produto,quantidade,valor_produto,forma_pagamento,codigo_loja,nome_loja,codigo_vendedor,nome_vendedor,data_venda,data_compra,status_venda,observacoes
-1,João Silva,15/05/1985,12345678,12345678901,Rua A,123,,Centro,São Paulo,SP,01234567,11987654321,P001,Teclado Mecânico,2,150.00,Cartão,L01,Loja Centro,V001,Carlos Silva,20/10/2024,18/10/2024,CONCLUIDA,
-```
-
-## 🔄 Agendamento (Cron)
-
-Exemplo de agendamento diário às 1h:
-
-```bash
-0 1 * * * cd /path/to/Vendas_teste && source venv_vendas/bin/activate && python main.py run >> data/logs/cron.log 2>&1
-```
-
-## 🧪 Testes
-
-Execute os testes automatizados:
-
-```bash
-python -m pytest
-```
-
-## 📝 Logs e Monitoramento
-
-- **Logs de processamento:** Acompanhe o progresso em `data/logs/batch.log`
-- **Relatórios de qualidade:** PDFs gerados em `data/reports/`
-- **Duplicatas detectadas:** Registradas em `data/reports/duplicates.csv`
+### 👤 Usuário
+- ✅ Indicadores básicos
+- ✅ Gráficos limitados
+- ❌ Filtros avançados
+- ❌ Execução de pipeline
+- ❌ Upload de CSV
 
 ## 🤝 Contribuição
 
 1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
-3. Commit suas mudanças (`git commit -am 'Adiciona nova feature'`)
-4. Push para a branch (`git push origin feature/nova-feature`)
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
 5. Abra um Pull Request
 
-## 📄 Licença
+## 📝 Licença
 
 Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para detalhes.
 
-## 🆘 Suporte
+## 📞 Suporte
 
-Para questões ou problemas:
-
-1. Verifique os logs em `data/logs/`
-2. Execute `python main.py dry-run` para validação
-3. Abra uma issue no repositório
+Para suporte, abra uma issue no GitHub ou entre em contato com a equipe de desenvolvimento.
 
 ---
 
-**Desenvolvido para análise de dados de vendas**
-
-
-
+**Desenvolvido com ❤️ para análise de dados de vendas**

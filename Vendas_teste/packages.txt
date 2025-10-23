@@ -1,0 +1,5 @@
+build-essential
+python3-dev
+libsqlite3-dev
+libssl-dev
+libffi-dev
