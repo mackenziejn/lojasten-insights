@@ -1,0 +1,114 @@
+{
+    "admin": {
+        "password": "senha123",
+        "role": "admin",
+        "nome": "administrador",
+        "loja": "Todas",
+        "permissions": {
+            "ver_filtros": true,
+            "ver_indicadores": true,
+            "ver_graficos": true,
+            "executar_pipeline": true,
+            "analisar_todas_lojas": true,
+            "upload_csv": true
+        }
+    },
+    "csilva": {
+        "password": "csilva1976",
+        "role": "user",
+        "nome": "Carlos Silva",
+        "loja": "Loja Centro",
+        "permissions": {
+            "ver_filtros": false,
+            "ver_indicadores": true,
+            "ver_graficos": true,
+            "executar_pipeline": false,
+            "analisar_todas_lojas": false,
+            "upload_csv": false
+        }
+    },
+    "maoliveira": {
+        "password": "maoliveira1980",
+        "role": "user",
+        "nome": "Maria Oliveira",
+        "loja": "Loja Centro",
+        "permissions": {
+            "ver_filtros": false,
+            "ver_indicadores": true,
+            "ver_graficos": true,
+            "executar_pipeline": false,
+            "analisar_todas_lojas": false,
+            "upload_csv": false
+        }
+    },
+    "josouza": {
+        "password": "josouza1986",
+        "role": "user",
+        "nome": "Joao Souza",
+        "loja": "Loja Shopping",
+        "permissions": {
+            "ver_filtros": false,
+            "ver_indicadores": true,
+            "ver_graficos": true,
+            "executar_pipeline": false,
+            "analisar_todas_lojas": false,
+            "upload_csv": false
+        }
+    },
+    "antonios": {
+        "password": "antonios1977",
+        "role": "user",
+        "nome": "Antonio Souza",
+        "loja": "Loja Shopping",
+        "permissions": {
+            "ver_filtros": false,
+            "ver_indicadores": true,
+            "ver_graficos": true,
+            "executar_pipeline": false,
+            "analisar_todas_lojas": false,
+            "upload_csv": false
+        }
+    },
+    "baronem": {
+        "password": "baronem1990",
+        "role": "user",
+        "nome": "Barone Mendes",
+        "loja": "Loja Bairro",
+        "permissions": {
+            "ver_filtros": false,
+            "ver_indicadores": true,
+            "ver_graficos": true,
+            "executar_pipeline": false,
+            "analisar_todas_lojas": false,
+            "upload_csv": false
+        }
+    },
+    "thiagoc": {
+        "password": "thiagoc1991",
+        "role": "user",
+        "nome": "Thiago Curse",
+        "loja": "Loja Bairro",
+        "permissions": {
+            "ver_filtros": false,
+            "ver_indicadores": true,
+            "ver_graficos": true,
+            "executar_pipeline": false,
+            "analisar_todas_lojas": false,
+            "upload_csv": false
+        }
+    },
+    "mnogueira": {
+        "password": "mnogueira123",
+        "role": "user",
+        "nome": "Mackenzie Nogueira",
+        "loja": "Loja Shopping",
+        "permissions": {
+            "ver_filtros": true,
+            "ver_indicadores": true,
+            "ver_graficos": true,
+            "executar_pipeline": false,
+            "analisar_todas_lojas": false,
+            "upload_csv": false
+        }
+    }
+}

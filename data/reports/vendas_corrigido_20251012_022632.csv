@@ -1,0 +1,11 @@
+id_cliente,nome_cliente,data_nascimento,rg,cpf,endereco,numero,complemento,bairro,cidade,estado,cep,telefone,codigo_produto,nome_produto,quantidade,valor_produto,forma_pagamento,codigo_loja,nome_loja,codigo_vendedor,nome_vendedor,data_compra,erros
+1,Brenda Alves,29/01/1994,4108603,32156408726,Chácara Cunha,18,,Serra Do Curral,Silva,RS,37940-265,55842351161,006,Caixa de som,1,200.0,Cartão de Crédito,L003,Loja Bairro,V006,Thiago,12/10/2025,
+10,Henry Gabriel Alves,04/10/1989,6685149,54162938709,Jardim Cavalcanti,240,,Universitário,Ferreira Alegre,PA,69340608,6135615951,003,Tablet,5,1800.0,Pix,L001,Loja Centro,V002,Fernanda,12/10/2025,
+2,Julia Aparecida,15/06/1993,8996414,16942853089,"Área Ribeiro, 24",71,,Itatiaia,Porto de Fonseca,CE,53419-283,55031764835,002,Smartphone,2,2200.0,Cartão de Débito,L003,Loja Bairro,V005,Barone,12/10/2025,
+3,Dr. João Felipe Azevedo,17/12/1965,9515702,53789614084,"Sítio de Nascimento, 79",465,,Cinquentenário,Borges de Sá,AL,22691669,06184801845,006,Caixa de som,5,200.0,Cartão de Crédito,L003,Loja Bairro,V006,Thiago,12/10/2025,
+4,Eduarda Marques,13/12/1954,4418934,82165970377,"Setor Vasconcelos, 609",20,,Coração Eucarístico,das Neves de Goiás,AL,91171822,07182489638,001,Notebook,1,3500.0,Cartão de Crédito,L001,Loja Centro,V001,Carlos,12/10/2025,
+5,Srta. Luana Guerra,10/07/2007,6264956,78901564300,"Fazenda de Pastor, 20",4,,Bernadete,Farias,AP,47382997,55517631165,005,Teclado,5,150.0,Cartão de Crédito,L003,Loja Bairro,V005,Barone,12/10/2025,
+6,Srta. Beatriz Araújo,12/02/1976,5692553,13894765020,"Feira Dom Macedo, 910",2,,Coração De Jesus,Cavalcante,PA,73602-606,55717468723,006,Caixa de som,5,200.0,Dinheiro,L001,Loja Centro,V002,Fernanda,12/10/2025,
+7,Vitor Hugo Araújo,03/06/1994,959074,07294615802,"Passarela Campos, 139",916,,Lagoa,Costela Alegre,ES,62475-107,09009118384,005,Teclado,3,150.0,Cartão de Crédito,L001,Loja Centro,V002,Fernanda,12/10/2025,
+8,Sr. Joaquim Freitas,18/11/1969,7351517,84059273104,Sítio Cassiano,44,,Vila Nova Gameleira 1ª Seção,Costela Paulista,PE,40164-005,55814278680,003,Tablet,3,1800.0,Cartão de Débito,L001,Loja Centro,V002,Fernanda,12/10/2025,
+9,Srta. Ísis Andrade,05/01/1999,9772888,82610945701,"Feira de Rios, 6",369,,Nova Vista,Castro,SE,60256342,55516073375,001,Notebook,1,3500.0,Dinheiro,L001,Loja Centro,V002,Fernanda,12/10/2025,

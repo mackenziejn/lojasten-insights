@@ -1,0 +1,11 @@
+id_cliente;nome_cliente;data_nascimento;rg;cpf;endereco;numero;complemento;bairro;cidade;estado;cep;telefone;codigo_produto;nome_produto;quantidade;valor_produto;data_venda;forma_pagamento;codigo_loja;nome_loja;codigo_vendedor;nome_vendedor
+1;Brenda Alves;29/01/1994;4108603;321.564.087-26;Chácara Cunha;18;;Serra Do Curral;Silva;RS;37940-265;+55 84 2351-1615;006;Caixa de som;1;200.0;17/08/2025;Cartão de Crédito;L003;Loja Bairro;V006;Thiago
+2;Julia Aparecida;15/06/1993;8996414;169.428.530-89;Área Ribeiro, 24;71;;Itatiaia;Porto de Fonseca;CE;53419-283;+55 (031) 7648-3503;002;Smartphone;2;2200.0;07/08/2025;Cartão de Débito;L003;Loja Bairro;V005;Barone
+3;Dr. João Felipe Azevedo;17/12/1965;9515702;537.896.140-84;Sítio de Nascimento, 79;465;;Cinquentenário;Borges de Sá;AL;22691669;(061) 8480-1845;006;Caixa de som;5;200.0;20/11/2024;Cartão de Crédito;L003;Loja Bairro;V006;Thiago
+4;Eduarda Marques;13/12/1954;4418934;821.659.703-77;Setor Vasconcelos, 609;20;;Coração Eucarístico;das Neves de Goiás;AL;91171822;(071) 8248-9638;001;Notebook;1;3500.0;14/07/2025;Cartão de Crédito;L001;Loja Centro;V001;Carlos
+5;Srta. Luana Guerra;10/07/2007;6264956;789.015.643-00;Fazenda de Pastor, 20;4;;Bernadete;Farias;AP;47382997;+55 51 7631 1656;005;Teclado;5;150.0;10/03/2025;Cartão de Crédito;L003;Loja Bairro;V005;Barone
+6;Srta. Beatriz Araújo;12/02/1976;5692553;138.947.650-20;Feira Dom Macedo, 910;2;;Coração De Jesus;Cavalcante;PA;73602-606;+55 71 7468-7234;006;Caixa de som;5;200.0;29/12/2024;Dinheiro;L001;Loja Centro;V002;Fernanda
+7;Vitor Hugo Araújo;03/06/1994;959074;072.946.158-02;Passarela Campos, 139;916;;Lagoa;Costela Alegre;ES;62475-107;0900-911-8384;005;Teclado;3;150.0;28/11/2024;Cartão de Crédito;L001;Loja Centro;V002;Fernanda
+8;Sr. Joaquim Freitas;18/11/1969;7351517;840.592.731-04;Sítio Cassiano;44;;Vila Nova Gameleira 1ª Seção;Costela Paulista;PE;40164-005;+55 81 4278 6801;003;Tablet;3;1800.0;07/11/2024;Cartão de Débito;L001;Loja Centro;V002;Fernanda
+9;Srta. Ísis Andrade;05/01/1999;9772888;826.109.457-01;Feira de Rios, 6;369;;Nova Vista;Castro;SE;60256342;+55 51 6073 3754;001;Notebook;1;3500.0;07/08/2025;Dinheiro;L001;Loja Centro;V002;Fernanda
+10;Henry Gabriel Alves;04/10/1989;6685149;541.629.387-09;Jardim Cavalcanti;240;;Universitário;Ferreira Alegre;PA;69340608;61 3561-5951;003;Tablet;5;1800.0;01/07/2025;Pix;L001;Loja Centro;V002;Fernanda
