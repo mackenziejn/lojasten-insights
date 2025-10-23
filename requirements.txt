@@ -7,4 +7,6 @@ openpyxl
 seaborn
 matplotlib
 reportlab
-reportlab
+dropbox
+faker
+pillow
