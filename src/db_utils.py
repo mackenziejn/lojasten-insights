@@ -28,13 +28,15 @@ def get_db_connection():
     # Tentar PostgreSQL (Supabase) primeiro
     if HAS_PSYCOPG2:
         try:
-            if all(key in st.secrets for key in ["DB_HOST", "DB_NAME", "DB_USER", "DB_PASSWORD", "DB_PORT"]):
+            # Verificar se temos as credenciais do banco na estrutura correta
+            if "database" in st.secrets and all(key in st.secrets["database"] for key in ["host", "database", "user", "password", "port"]):
+                db_config = st.secrets["database"]
                 conn = psycopg2.connect(
-                    host=st.secrets["DB_HOST"],
-                    database=st.secrets["DB_NAME"],
-                    user=st.secrets["DB_USER"],
-                    password=st.secrets["DB_PASSWORD"],
-                    port=st.secrets["DB_PORT"]
+                    host=db_config["host"],
+                    database=db_config["database"],
+                    user=db_config["user"],
+                    password=db_config["password"],
+                    port=db_config["port"]
                 )
                 logger.info("✅ Conectado ao PostgreSQL (Supabase)")
                 return conn, 'postgresql'
