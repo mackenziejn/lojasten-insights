@@ -16,7 +16,7 @@ def temp_env(tmp_path, monkeypatch):
     reports_dir.mkdir()
 
     # copy schema.sql to tmp and create DB
-    schema_src = os.path.join('data', 'db', 'schema.sql')
+    schema_src = os.path.join(os.path.dirname(__file__), '..', 'data', 'db', 'schema.sql')
     tmp_schema = tmp_path / 'schema.sql'
     shutil.copy(schema_src, tmp_schema)
 
@@ -24,6 +24,7 @@ def temp_env(tmp_path, monkeypatch):
     # override constants in db_utils
     monkeypatch.setattr(db_utils, 'DB_PATH', str(db_file))
     monkeypatch.setattr(db_utils, 'DUPLICATE_LOG', str(reports_dir / 'duplicates.log'))
+    monkeypatch.setattr(db_utils, 'DUPLICATE_CSV', str(reports_dir / 'duplicates.csv'))
 
     # create DB from schema
     db_utils.criar_tabela(schema_path=str(tmp_schema))
@@ -41,6 +42,8 @@ def test_missing_fields_defaults_and_insert(temp_env):
         'cpf': '000.000.000-00',
         'codigo_produto': 'P001',
         'quantidade': 1,
+        'valor_produto': 10.0,
+        'data_venda': '2023-01-01',
         'codigo_loja': 'LTEST',
         'codigo_vendedor': 'VTEST'
     }
@@ -73,7 +76,7 @@ def test_duplicate_cpf_logged_and_skipped(temp_env):
     # insert initial row
     initial = {
         'nome_cliente': 'Alice', 'cpf': '111.111.111-11', 'codigo_produto': 'P002', 'quantidade': 1,
-        'codigo_loja': 'L2', 'codigo_vendedor': 'V2'
+        'valor_produto': 5.0, 'data_venda': '2023-01-01', 'codigo_loja': 'L2', 'codigo_vendedor': 'V2'
     }
     conn = sqlite3.connect(db_utils.DB_PATH)
     cur = conn.cursor()
@@ -114,7 +117,7 @@ def test_fallback_mapping(temp_env):
     conn.commit()
     conn.close()
 
-    data = {'nome_cliente': 'Fallback', 'cpf': '222.222.222-22', 'codigo_produto': 'PX', 'quantidade': 1, 'codigo_loja': 'LFB', 'codigo_vendedor': 'V_B'}
+    data = {'nome_cliente': 'Fallback', 'cpf': '222.222.222-22', 'codigo_produto': 'PX', 'quantidade': 1, 'valor_produto': 1.0, 'data_venda': '2023-01-01', 'codigo_loja': 'LFB', 'codigo_vendedor': 'V_B'}
     db_utils.inserir_linha(data)
 
     conn = sqlite3.connect(db_utils.DB_PATH)

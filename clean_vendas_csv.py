@@ -3,7 +3,7 @@ import unidecode
 import re
 import os
 
-def clean_vendas_csv(input_path='data/raw/vendas.csv', output_path='data/raw/vendas.csv'):
+def clean_vendas_csv(input_path='data/processed/vendas_fake.csv', output_path='data/raw/vendas_clean.csv'):
     """
     Cleans the vendas.csv file:
     - Removes accents, cedillas, and special characters using unidecode.
@@ -18,10 +18,10 @@ def clean_vendas_csv(input_path='data/raw/vendas.csv', output_path='data/raw/ven
         return
 
     # Load CSV
-    df = pd.read_csv(input_path)
+    df = pd.read_csv(input_path, sep=';')
 
     # Fields to clean for accents/special chars
-    fields_to_unidecode = ['nome_cliente', 'endereco', 'nome_vendedor', 'bairro', 'cidade', 'complemento']
+    fields_to_unidecode = ['nome_cliente', 'endereco', 'nome_vendedor', 'bairro', 'cidade', 'complemento', 'forma_pagamento']
 
     for field in fields_to_unidecode:
         if field in df.columns:
@@ -29,8 +29,13 @@ def clean_vendas_csv(input_path='data/raw/vendas.csv', output_path='data/raw/ven
 
     # Remove titles from nome_cliente
     if 'nome_cliente' in df.columns:
-        titles_pattern = r'^(Dr\.|Dra\.|Sr\.|Sra\.|Prof\.|Profª\.)\s*'
+        titles_pattern = r'^(Dr\.|Dra\.|Sr\.|Sra\.|Srta\.|Mr\.|Mra\.|Prof\.|Profª\.)\s*'
         df['nome_cliente'] = df['nome_cliente'].astype(str).apply(lambda x: re.sub(titles_pattern, '', x).strip())
+
+    # Remove periods, hyphens, accents, cedillas from all string columns
+    for col in df.select_dtypes(include=['object']).columns:
+        df[col] = df[col].astype(str).apply(lambda x: re.sub(r'[.\-]', '', x))  # Remove periods and hyphens
+        df[col] = df[col].apply(lambda x: unidecode.unidecode(x))  # Remove accents and cedillas
 
     # Save cleaned CSV (overwrite)
     df.to_csv(output_path, index=False)

@@ -6,6 +6,42 @@ from src.db_utils import inserir_linha
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
+def validar_e_padronizar_csv(df):
+    """Valida estrutura do CSV e padroniza colunas obrigatórias"""
+
+    # Colunas obrigatórias esperadas (ordem padrão)
+    colunas_obrigatorias = [
+        'id_cliente', 'nome_cliente', 'data_nascimento', 'rg', 'cpf',
+        'endereco', 'numero', 'complemento', 'bairro', 'cidade', 'estado', 'cep', 'telefone',
+        'codigo_produto', 'nome_produto', 'quantidade', 'valor_produto',
+        'forma_pagamento', 'codigo_loja', 'nome_loja', 'codigo_vendedor', 'nome_vendedor',
+        'data_venda', 'data_compra', 'status_venda', 'observacoes'
+    ]
+
+    # Verificar se pelo menos as colunas críticas estão presentes
+    colunas_criticas = ['nome_cliente', 'nome_produto', 'quantidade', 'valor_produto',
+                       'nome_loja', 'nome_vendedor', 'data_venda']
+
+    colunas_faltando = [col for col in colunas_criticas if col not in df.columns]
+    if colunas_faltando:
+        raise ValueError(f"Colunas críticas faltando no CSV: {', '.join(colunas_faltando)}")
+
+    # Reordenar colunas na ordem padrão (usar apenas as que existem)
+    colunas_existentes = [col for col in colunas_obrigatorias if col in df.columns]
+    df_padronizado = df[colunas_existentes].copy()
+
+    # Adicionar colunas opcionais faltantes com valores padrão
+    for col in colunas_obrigatorias:
+        if col not in df_padronizado.columns:
+            if col in ['quantidade', 'valor_produto']:
+                df_padronizado[col] = 0
+            elif col == 'status_venda':
+                df_padronizado[col] = 'CONCLUIDA'
+            else:
+                df_padronizado[col] = ''
+
+    return df_padronizado
+
 def gerar_pdf_relatorio(resumo_path, relatorio_completo_path, pdf_path):
     """Gera um PDF resumindo a qualidade dos dados."""
     c = canvas.Canvas(pdf_path, pagesize=A4)

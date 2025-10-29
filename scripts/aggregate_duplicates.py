@@ -8,7 +8,7 @@ import datetime
 import os
 from collections import Counter, defaultdict
 
-REPORTS = os.path.join('data', 'reports')
+REPORTS = os.path.join(os.path.dirname(__file__), '..', 'data', 'reports')
 os.makedirs(REPORTS, exist_ok=True)
 
 INPUT = os.path.join(REPORTS, 'duplicates.csv')

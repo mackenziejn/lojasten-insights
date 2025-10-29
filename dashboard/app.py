@@ -9,143 +9,330 @@ import logging
 import json
 from logging.handlers import RotatingFileHandler
 
-# Debug: verificar estrutura de arquivos
-st.write("Diretório atual:", os.getcwd())
-st.write("Arquivos no diretório:", os.listdir("."))
-st.write("Arquivos em Vendas_teste:", os.listdir("Vendas_teste") if os.path.exists("Vendas_teste") else "Pasta não existe")
-st.write("Arquivos em Vendas_teste/data:", os.listdir("Vendas_teste/data") if os.path.exists("Vendas_teste/data") else "Pasta não existe")
-
 # 🔹 Adiciona o diretório pai de 'src' ao path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # 🔹 Importações do seu projeto
-from src.pipeline import executar_pipeline
+from src.pipeline import executar_pipeline, validar_e_padronizar_csv
 from src.validacao import corrigir_linha, validar_linha
-from src.db_utils import carregar_usuarios, salvar_usuario, deletar_usuario
+from src.db_utils import criar_tabela, carregar_usuarios, salvar_usuario, deletar_usuario
 
 # Configurações do dashboard
 st.set_page_config(page_title="Painel de Vendas", layout="wide")
-REPORTS_DIR = "data/reports"
+REPORTS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "reports"))
 DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "db", "vendas.db"))
 USERS_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "users.json"))
 
-# Carregar usuários do banco
-usuarios = carregar_usuarios()
+# Criar tabelas se necessário
+criar_tabela()
 
-# Se não há usuários, carregar do JSON como fallback
-if not usuarios:
-    if os.path.exists(USERS_FILE):
-        with open(USERS_FILE) as f:
-            usuarios = json.load(f)
-    else:
-        # Criar usuários padrão se não existir
-        default_users = {
-            "admin": {
-                "password": "senha123",
-                "role": "admin",
-                "nome": "Administrador",
-                "loja": "Todas",
-                "permissions": {
-                    "ver_filtros": True,
-                    "ver_indicadores": True,
-                    "ver_graficos": True,
-                    "executar_pipeline": True,
-                    "analisar_todas_lojas": True,
-                    "upload_csv": True
-                }
-            },
-            "csilva": {
-                "password": "csilva1976",
-                "role": "admin",
-                "nome": "Carlos Silva",
-                "loja": "Loja Centro",
-                "permissions": {
-                    "ver_filtros": False,
-                    "ver_indicadores": True,
-                    "ver_graficos": True,
-                    "executar_pipeline": False,
-                    "analisar_todas_lojas": False,
-                    "upload_csv": False
-                }
-            },
-            "maoliveira": {
-                "password": "maoliveira1980",
-                "role": "user",
-                "nome": "Maria Oliveira",
-                "loja": "Loja Norte",
-                "permissions": {
-                    "ver_filtros": False,
-                    "ver_indicadores": True,
-                    "ver_graficos": True,
-                    "executar_pipeline": False,
-                    "analisar_todas_lojas": False,
-                    "upload_csv": False
-                }
-            },
-            "josouza": {
-                "password": "josouza1986",
-                "role": "user",
-                "nome": "João Souza",
-                "loja": "Loja Sul",
-                "permissions": {
-                    "ver_filtros": False,
-                    "ver_indicadores": True,
-                    "ver_graficos": True,
-                    "executar_pipeline": False,
-                    "analisar_todas_lojas": False,
-                    "upload_csv": False
-                }
-            },
-            "antonios": {
-                "password": "antonios1977",
-                "role": "admin",
-                "nome": "Antonio Santos",
-                "loja": "Loja Leste",
-                "permissions": {
-                    "ver_filtros": False,
-                    "ver_indicadores": True,
-                    "ver_graficos": True,
-                    "executar_pipeline": False,
-                    "analisar_todas_lojas": False,
-                    "upload_csv": False
-                }
-            },
-            "baronem": {
-                "password": "baronem1990",
-                "role": "user",
-                "nome": "Barbara Neme",
-                "loja": "Loja Oeste",
-                "permissions": {
-                    "ver_filtros": False,
-                    "ver_indicadores": True,
-                    "ver_graficos": True,
-                    "executar_pipeline": False,
-                    "analisar_todas_lojas": False,
-                    "upload_csv": False
-                }
-            },
-            "thiagoc": {
-                "password": "thiagoc1991",
-                "role": "admin",
-                "nome": "Thiago Costa",
-                "loja": "Loja Centro",
-                "permissions": {
-                    "ver_filtros": False,
-                    "ver_indicadores": True,
-                    "ver_graficos": True,
-                    "executar_pipeline": False,
-                    "analisar_todas_lojas": False,
-                    "upload_csv": False
+# Initialize usuarios in session state
+if 'usuarios' not in st.session_state:
+    # Carregar usuários do banco
+    usuarios = carregar_usuarios()
+
+    # Se não há usuários, carregar do JSON como fallback
+    if not usuarios:
+        if os.path.exists(USERS_FILE):
+            with open(USERS_FILE) as f:
+                usuarios = json.load(f)
+        else:
+            # Criar usuários padrão se não existir
+            default_users = {
+                "admin": {
+                    "password": "senha123",
+                    "role": "admin",
+                    "nome": "Administrador",
+                    "loja": "Todas lojas",
+                    "permissions": {
+                        "ver_filtros": True,
+                        "ver_indicadores": True,
+                        "ver_graficos": True,
+                        "executar_pipeline": True,
+                        "analisar_todas_lojas": True,
+                        "upload_csv": True
+                    }
+                },
+                "csilva": {
+                    "password": "csilva1976",
+                    "role": "manager",
+                    "nome": "Carlos Silva",
+                    "loja": "Loja Centro",
+                    "permissions": {
+                        "ver_filtros": True,
+                        "ver_indicadores": True,
+                        "ver_graficos": True,
+                        "executar_pipeline": True,
+                        "analisar_todas_lojas": False,
+                        "upload_csv": False
+                    }
+                },
+                "maoliveira": {
+                    "password": "maoliveira1980",
+                    "role": "user",
+                    "nome": "Maria Oliveira",
+                    "loja": "Loja Norte",
+                    "permissions": {
+                        "ver_filtros": True,
+                        "ver_indicadores": True,
+                        "ver_graficos": True,
+                        "executar_pipeline": False,
+                        "analisar_todas_lojas": False,
+                        "upload_csv": False
+                    }
+                },
+                "josouza": {
+                    "password": "josouza1986",
+                    "role": "user",
+                    "nome": "João Souza",
+                    "loja": "Loja Bairro",
+                    "permissions": {
+                        "ver_filtros": True,
+                        "ver_indicadores": True,
+                        "ver_graficos": True,
+                        "executar_pipeline": False,
+                        "analisar_todas_lojas": False,
+                        "upload_csv": False
+                    }
+                },
+                "antonios": {
+                    "password": "antonios1977",
+                    "role": "manager",
+                    "nome": "Antonio Santos",
+                    "loja": "Loja Shopping",
+                    "permissions": {
+                        "ver_filtros": True,
+                        "ver_indicadores": True,
+                        "ver_graficos": True,
+                        "executar_pipeline": True,
+                        "analisar_todas_lojas": False,
+                        "upload_csv": False
+                    }
+                },
+                "baronem": {
+                    "password": "baronem1990",
+                    "role": "user",
+                    "nome": "Barbara Neme",
+                    "loja": "Loja Bairro",
+                    "permissions": {
+                        "ver_filtros": True,
+                        "ver_indicadores": True,
+                        "ver_graficos": True,
+                        "executar_pipeline": False,
+                        "analisar_todas_lojas": False,
+                        "upload_csv": False
+                    }
+                },
+                "thiagoc": {
+                    "password": "thiagoc123",
+                    "role": "manager",
+                    "nome": "Thiago Costa",
+                    "loja": "Loja Shopping",
+                    "permissions": {
+                        "ver_filtros": True,
+                        "ver_indicadores": True,
+                        "ver_graficos": True,
+                        "executar_pipeline": True,
+                        "analisar_todas_lojas": False,
+                        "upload_csv": False
+                    }
+                },
+                "mnogueira": {
+                    "password": "mnogueira123",
+                    "role": "user",
+                    "nome": "Marcos Nogueira",
+                    "loja": "Loja Bairro",
+                    "permissions": {
+                        "ver_filtros": True,
+                        "ver_indicadores": True,
+                        "ver_graficos": True,
+                        "executar_pipeline": False,
+                        "analisar_todas_lojas": False,
+                        "upload_csv": False
+                    }
                 }
             }
+
+            with open(USERS_FILE, "w") as f:
+                json.dump(default_users, f, indent=4)
+            usuarios = default_users
+
+            # Salvar usuários padrão no banco se não existirem
+            for login, data in usuarios.items():
+                salvar_usuario(
+                    login=login,
+                    password=data["password"],
+                    role=data["role"],
+                    nome=data["nome"],
+                    loja=data["loja"],
+                    permissions=data["permissions"],
+                    codigo_vendedor=data.get("codigo_vendedor"),
+                    ativo=data.get("ativo", True)
+                )
+
+    # Ensure all default users are in DB (with lowercase logins)
+    default_users = {
+        "admin": {
+            "password": "senha123",
+            "role": "admin",
+            "nome": "Administrador",
+            "loja": "Todas lojas",
+            "permissions": {
+                "ver_filtros": True,
+                "ver_indicadores": True,
+                "ver_graficos": True,
+                "executar_pipeline": True,
+                "analisar_todas_lojas": True,
+                "upload_csv": True
+            }
+        },
+        "csilva": {
+            "password": "csilva1976",
+            "role": "manager",
+            "nome": "Carlos Silva",
+            "loja": "Loja Centro",
+            "permissions": {
+                "ver_filtros": True,
+                "ver_indicadores": True,
+                "ver_graficos": True,
+                "executar_pipeline": True,
+                "analisar_todas_lojas": False,
+                "upload_csv": False
+            }
+        },
+        "maoliveira": {
+            "password": "maoliveira1980",
+            "role": "user",
+            "nome": "Maria Oliveira",
+            "loja": "Loja Norte",
+            "permissions": {
+                "ver_filtros": True,
+                "ver_indicadores": True,
+                "ver_graficos": True,
+                "executar_pipeline": False,
+                "analisar_todas_lojas": False,
+                "upload_csv": False
+            }
+        },
+        "josouza": {
+            "password": "josouza1986",
+            "role": "user",
+            "nome": "João Souza",
+            "loja": "Loja Bairro",
+            "permissions": {
+                "ver_filtros": True,
+                "ver_indicadores": True,
+                "ver_graficos": True,
+                "executar_pipeline": False,
+                "analisar_todas_lojas": False,
+                "upload_csv": False
+            }
+        },
+        "antonios": {
+            "password": "antonios1977",
+            "role": "manager",
+            "nome": "Antonio Santos",
+            "loja": "Loja Shopping",
+            "permissions": {
+                "ver_filtros": True,
+                "ver_indicadores": True,
+                "ver_graficos": True,
+                "executar_pipeline": True,
+                "analisar_todas_lojas": False,
+                "upload_csv": False
+            }
+        },
+        "baronem": {
+            "password": "baronem1990",
+            "role": "user",
+            "nome": "Barbara Neme",
+            "loja": "Loja Bairro",
+            "permissions": {
+                "ver_filtros": True,
+                "ver_indicadores": True,
+                "ver_graficos": True,
+                "executar_pipeline": False,
+                "analisar_todas_lojas": False,
+                "upload_csv": False
+            }
+        },
+        "thiagoc": {
+            "password": "thiagoc123",
+            "role": "manager",
+            "nome": "Thiago Costa",
+            "loja": "Loja Shopping",
+            "permissions": {
+                "ver_filtros": True,
+                "ver_indicadores": True,
+                "ver_graficos": True,
+                "executar_pipeline": True,
+                "analisar_todas_lojas": False,
+                "upload_csv": False
+            }
+        },
+        "mnogueira": {
+            "password": "mnogueira123",
+            "role": "user",
+            "nome": "Marcos Nogueira",
+            "loja": "Loja Bairro",
+            "permissions": {
+                "ver_filtros": True,
+                "ver_indicadores": True,
+                "ver_graficos": True,
+                "executar_pipeline": False,
+                "analisar_todas_lojas": False,
+                "upload_csv": False
+            }
         }
-        
-        with open(USERS_FILE, "w") as f:
-            json.dump(default_users, f, indent=4)
-        usuarios = default_users
+    }
+
+    for login, data in default_users.items():
+        if login not in usuarios:
+            salvar_usuario(
+                login=login,
+                password=data["password"],
+                role=data["role"],
+                nome=data["nome"],
+                loja=data["loja"],
+                permissions=data["permissions"],
+                codigo_vendedor=data.get("codigo_vendedor"),
+                ativo=data.get("ativo", True)
+            )
+
+    # Reload usuarios after ensuring
+    usuarios = carregar_usuarios()
+    st.session_state['usuarios'] = usuarios
+else:
+    usuarios = st.session_state['usuarios']
+
+# Initialize session state for form fields
+if 'novo_login' not in st.session_state:
+    st.session_state.novo_login = ''
+if 'novo_nome' not in st.session_state:
+    st.session_state.novo_nome = ''
+if 'nova_senha' not in st.session_state:
+    st.session_state.nova_senha = ''
+if 'nova_loja' not in st.session_state:
+    st.session_state.nova_loja = ''
+if 'novo_role' not in st.session_state:
+    st.session_state.novo_role = 'user'
+if 'novo_ver_filtros' not in st.session_state:
+    st.session_state.novo_ver_filtros = False
+if 'novo_ver_indicadores' not in st.session_state:
+    st.session_state.novo_ver_indicadores = True
+if 'novo_ver_graficos' not in st.session_state:
+    st.session_state.novo_ver_graficos = True
+if 'novo_executar_pipeline' not in st.session_state:
+    st.session_state.novo_executar_pipeline = False
+if 'novo_analisar_todas_lojas' not in st.session_state:
+    st.session_state.novo_analisar_todas_lojas = False
+if 'novo_upload_csv' not in st.session_state:
+    st.session_state.novo_upload_csv = False
+if 'check_login_input' not in st.session_state:
+    st.session_state.check_login_input = ''
 
 # Configure web logger to separate Streamlit logs from batch logs
-LOG_DIR = os.path.join('data', 'logs')
+LOG_DIR = os.path.join(os.path.dirname(__file__), '..', 'data', 'logs')
 os.makedirs(LOG_DIR, exist_ok=True)
 web_log = os.path.join(LOG_DIR, 'web.log')
 root_logger = logging.getLogger()
@@ -192,42 +379,7 @@ def detectar_separador(uploaded_file):
     # Retornar separador com mais ocorrências
     return ',' if comma_count >= semicolon_count else ';'
 
-# 🔹 Função para validar e padronizar estrutura do CSV
-def validar_e_padronizar_csv(df):
-    """Valida estrutura do CSV e padroniza colunas obrigatórias"""
 
-    # Colunas obrigatórias esperadas (ordem padrão)
-    colunas_obrigatorias = [
-        'id_cliente', 'nome_cliente', 'data_nascimento', 'rg', 'cpf',
-        'endereco', 'numero', 'complemento', 'bairro', 'cidade', 'estado', 'cep', 'telefone',
-        'codigo_produto', 'nome_produto', 'quantidade', 'valor_produto',
-        'forma_pagamento', 'codigo_loja', 'nome_loja', 'codigo_vendedor', 'nome_vendedor',
-        'data_venda', 'data_compra', 'status_venda', 'observacoes'
-    ]
-
-    # Verificar se pelo menos as colunas críticas estão presentes
-    colunas_criticas = ['nome_cliente', 'nome_produto', 'quantidade', 'valor_produto',
-                       'nome_loja', 'nome_vendedor', 'data_venda']
-
-    colunas_faltando = [col for col in colunas_criticas if col not in df.columns]
-    if colunas_faltando:
-        raise ValueError(f"Colunas críticas faltando no CSV: {', '.join(colunas_faltando)}")
-
-    # Reordenar colunas na ordem padrão (usar apenas as que existem)
-    colunas_existentes = [col for col in colunas_obrigatorias if col in df.columns]
-    df_padronizado = df[colunas_existentes].copy()
-
-    # Adicionar colunas opcionais faltantes com valores padrão
-    for col in colunas_obrigatorias:
-        if col not in df_padronizado.columns:
-            if col in ['quantidade', 'valor_produto']:
-                df_padronizado[col] = 0
-            elif col == 'status_venda':
-                df_padronizado[col] = 'CONCLUIDA'
-            else:
-                df_padronizado[col] = ''
-
-    return df_padronizado
 
 # 🔹 Cabeçalho exibido somente antes da autenticação com logo
 if not st.session_state.get("autenticado", False):
@@ -270,19 +422,20 @@ if not st.session_state.autenticado:
         usuario = st.text_input("Usuário", key="usuario_input")
         senha = st.text_input("Senha", type="password", key="senha_input")
         if st.button("Entrar"):
-            if usuario in usuarios and senha == usuarios[usuario]["password"]:
+            usuario_lower = usuario.lower()
+            if usuario_lower in usuarios and senha == usuarios[usuario_lower]["password"]:
                 # Verificar se usuário está ativo
-                if not usuarios[usuario].get("ativo", True):
+                if not usuarios[usuario_lower].get("ativo", True):
                     st.error("❌ Conta desativada. Entre em contato com o administrador.")
                     st.stop()
 
                 st.session_state.autenticado = True
-                st.session_state.usuario = usuario
-                st.session_state.role = usuarios[usuario]["role"]
-                st.session_state.permissions = usuarios[usuario]["permissions"]
-                st.session_state.nome_usuario = usuarios[usuario]["nome"]
-                st.session_state.loja_usuario = usuarios[usuario]["loja"]
-                st.session_state.codigo_vendedor = usuarios[usuario].get("codigo_vendedor")
+                st.session_state.usuario = usuario_lower
+                st.session_state.role = usuarios[usuario_lower]["role"]
+                st.session_state.permissions = usuarios[usuario_lower]["permissions"]
+                st.session_state.nome_usuario = usuarios[usuario_lower]["nome"]
+                st.session_state.loja_usuario = usuarios[usuario_lower]["loja"]
+                st.session_state.codigo_vendedor = usuarios[usuario_lower].get("codigo_vendedor")
                 st.success("✅ Autenticado com sucesso!")
                 st.rerun()
             else:
@@ -319,6 +472,9 @@ else:
 if not st.session_state.autenticado:
     st.stop()
 
+# Initialize df_filtrado
+df_filtrado = pd.DataFrame()
+
 # 🔹 Seção de Configuração
 if st.session_state.get("show_config", False):
     st.header("Configuração de Usuários")
@@ -330,46 +486,46 @@ if st.session_state.get("show_config", False):
     # Verificar login fora do form
     col_check1, col_check2 = st.columns([3, 1])
     with col_check1:
-        check_login_input = st.text_input("Verificar disponibilidade de login", key="check_login_input")
+        check_login_input = st.text_input("Verificar disponibilidade de login", key="check_login_input", value=st.session_state.get('check_login_input', ''))
     with col_check2:
         if st.button("Verificar", key="check_login_button"):
             if check_login_input:
                 if check_login_input in usuarios:
                     st.error("❌ Login existente, digite novamente!")
-                    if 'novo_login' in st.session_state:
-                        del st.session_state['novo_login']
+                    st.session_state['novo_login'] = ""
                 else:
                     st.success("✅ Login disponível!")
                     st.session_state['novo_login'] = check_login_input
             else:
                 st.warning("Digite um login primeiro.")
-                if 'novo_login' in st.session_state:
-                    del st.session_state['novo_login']
+                st.session_state['novo_login'] = ""
 
     with st.form("novo_usuario_form"):
         col1, col2 = st.columns(2)
         with col1:
             novo_login = st.text_input("Login do usuário*", value=st.session_state.get('novo_login', ''), key="novo_login_input")
-            novo_nome = st.text_input("Nome completo*")
+            novo_nome = st.text_input("Nome completo*", value=st.session_state.get('novo_nome', ''), key="novo_nome_input")
         with col2:
-            nova_senha = st.text_input("Senha*", type="password")
+            nova_senha = st.text_input("Senha*", type="password", value=st.session_state.get('nova_senha', ''), key="nova_senha_input")
             # Obter lista de lojas do banco de dados
             lojas_disponiveis = obter_lojas()
-            lojas_disponiveis.insert(0, "Todas")
-            nova_loja = st.selectbox("Loja de atuação*", options=lojas_disponiveis)
-        
+            lojas_disponiveis.insert(0, "Todas lojas")
+            nova_loja = st.selectbox("Loja de atuação*", options=lojas_disponiveis, index=lojas_disponiveis.index(st.session_state.get('nova_loja', lojas_disponiveis[0])) if st.session_state.get('nova_loja') in lojas_disponiveis else 0, key="nova_loja_select")
+
+
+
         st.markdown("**Permissões:**")
         col3, col4 = st.columns(2)
         with col3:
-            novo_role = st.selectbox("Perfil*", ["user", "admin", "manager"])
-            novo_ver_filtros = st.checkbox("Ver Filtros", value=False)
-            novo_ver_indicadores = st.checkbox("Ver Indicadores", value=True)
-            novo_ver_graficos = st.checkbox("Ver Gráficos", value=True)
+            novo_role = st.selectbox("Perfil*", ["user", "admin", "manager"], index=["user", "admin", "manager"].index(st.session_state.get('novo_role', 'user')), key="novo_role_select")
+            novo_ver_filtros = st.checkbox("Ver Filtros", value=st.session_state.get('novo_ver_filtros', False), key="novo_ver_filtros_check")
+            novo_ver_indicadores = st.checkbox("Ver Indicadores", value=st.session_state.get('novo_ver_indicadores', True), key="novo_ver_indicadores_check")
+            novo_ver_graficos = st.checkbox("Ver Gráficos", value=st.session_state.get('novo_ver_graficos', True), key="novo_ver_graficos_check")
         with col4:
-            novo_executar_pipeline = st.checkbox("Executar Pipeline", value=False)
-            novo_analisar_todas_lojas = st.checkbox("Analisar Todas as Lojas", value=False)
-            novo_upload_csv = st.checkbox("Upload CSV", value=False)
-        
+            novo_executar_pipeline = st.checkbox("Executar Pipeline", value=st.session_state.get('novo_executar_pipeline', False), key="novo_executar_pipeline_check")
+            novo_analisar_todas_lojas = st.checkbox("Analisar Todas as lojas", value=st.session_state.get('novo_analisar_todas_lojas', False), key="novo_analisar_todas_lojas_check")
+            novo_upload_csv = st.checkbox("Upload CSV", value=st.session_state.get('novo_upload_csv', False), key="novo_upload_csv_check")
+
         adicionar_usuario = st.form_submit_button("➕ Adicionar Usuário")
 
     if adicionar_usuario:
@@ -394,7 +550,7 @@ if st.session_state.get("show_config", False):
                         "ver_filtros": True,
                         "ver_indicadores": True,
                         "ver_graficos": True,
-                        "executar_pipeline": False,
+                        "executar_pipeline": True,
                         "analisar_todas_lojas": False,  # Manager vê apenas sua loja
                         "upload_csv": False
                     }
@@ -408,6 +564,9 @@ if st.session_state.get("show_config", False):
                         "upload_csv": False
                     }
 
+                # Converter login para minúsculas
+                novo_login_lower = novo_login.lower()
+
                 novo_usuario = {
                     "password": nova_senha,
                     "role": novo_role,
@@ -415,21 +574,36 @@ if st.session_state.get("show_config", False):
                     "loja": nova_loja,
                     "permissions": permissions_padrao
                 }
-                
-                # Salvar no banco de dados
+
+                # Salvar no banco de dados com login em minúsculas
                 salvar_usuario(
-                    login=novo_login,
+                    login=novo_login_lower,
                     password=nova_senha,
                     role=novo_role,
                     nome=novo_nome,
                     loja=nova_loja,
                     permissions=novo_usuario["permissions"]
                 )
-                
-                # Atualizar lista local
-                usuarios[novo_login] = novo_usuario
-                st.success(f"✅ Usuário '{novo_login}' adicionado com sucesso!")
-                
+
+                # Atualizar lista local com login em minúsculas
+                usuarios[novo_login_lower] = novo_usuario
+                st.session_state['usuarios'] = usuarios
+                st.success(f"✅ Usuário '{novo_login_lower}' adicionado com sucesso!")
+
+                # Limpar formulário após sucesso
+                st.session_state.novo_login = ""
+                st.session_state.novo_nome = ""
+                st.session_state.nova_senha = ""
+                st.session_state.nova_loja = lojas_disponiveis[0] if lojas_disponiveis else ""
+                st.session_state.novo_role = "user"
+                st.session_state.novo_ver_filtros = False
+                st.session_state.novo_ver_indicadores = True
+                st.session_state.novo_ver_graficos = True
+                st.session_state.novo_executar_pipeline = False
+                st.session_state.novo_analisar_todas_lojas = False
+                st.session_state.novo_upload_csv = False
+                st.rerun()
+
             except Exception as e:
                 st.error(f"❌ Erro ao adicionar usuário: {e}")
     
@@ -477,8 +651,8 @@ if st.session_state.get("show_config", False):
 
                     # Selectbox para lojas
                     lojas_disponiveis = obter_lojas()
-                    lojas_disponiveis.insert(0, "Todas")
-                    loja_atual = data.get("loja", "Todas")
+                    lojas_disponiveis.insert(0, "Todas lojas")
+                    loja_atual = data.get("loja", "Todas lojas")
                     loja_editada = st.selectbox(
                         f"Loja",
                         options=lojas_disponiveis,
@@ -507,12 +681,12 @@ if st.session_state.get("show_config", False):
                         novo_ver_filtros = True
                         novo_ver_indicadores = True
                         novo_ver_graficos = True
-                        novo_executar_pipeline = False
+                        novo_executar_pipeline = True
                         novo_analisar_todas_lojas = False
                         novo_upload_csv = False
                     else:
                         # Para admin e user, permitir edição
-                        novo_ver_filtros = st.checkbox("Ver Filtros", value=perms.get("ver_filtros", False), key=f"filtros_{user}_config")
+                        novo_ver_filtros = st.checkbox("Ver Filtros", value=perms.get("ver_filtros", True), key=f"filtros_{user}_config")
                         novo_ver_indicadores = st.checkbox("Ver Indicadores", value=perms.get("ver_indicadores", True), key=f"ind_{user}_config")
                         novo_ver_graficos = st.checkbox("Ver Gráficos", value=perms.get("ver_graficos", True), key=f"graf_{user}_config")
                         novo_executar_pipeline = st.checkbox("Executar Pipeline", value=perms.get("executar_pipeline", False), key=f"pipe_{user}_config")
@@ -548,6 +722,7 @@ if st.session_state.get("show_config", False):
                             "loja": loja_editada,
                             "permissions": updated_permissions
                         }
+                        st.session_state['usuarios'] = usuarios
 
                         st.success(f"✅ Usuário {user} atualizado com sucesso!")
 
@@ -576,6 +751,7 @@ if st.session_state.get("show_config", False):
 
                                 # Atualizar lista local
                                 usuarios[user]["ativo"] = False
+                                st.session_state['usuarios'] = usuarios
                                 st.success(f"✅ Usuário {user} desativado com sucesso!")
                                 st.rerun()
                             except Exception as e:
@@ -597,6 +773,7 @@ if st.session_state.get("show_config", False):
 
                                 # Atualizar lista local
                                 usuarios[user]["ativo"] = True
+                                st.session_state['usuarios'] = usuarios
                                 st.success(f"✅ Usuário {user} reativado com sucesso!")
                                 st.rerun()
                             except Exception as e:
@@ -613,22 +790,89 @@ if st.session_state.get("show_config", False):
     # 🔹 BOTÕES NA SIDEBAR (no lugar da engrenagem)
     with st.sidebar:
         st.markdown("---")
-                
+
         if st.button("Recarregar Usuários", use_container_width=True, key="reload_users"):
             try:
-                usuarios = carregar_usuarios()
-                st.success("✅ Usuários recarregados do banco com sucesso!")
+                usuarios_atualizados = carregar_usuarios()
+                st.session_state['usuarios'] = usuarios_atualizados
+                st.success("Usuários carregados do banco com sucesso!")
+                st.rerun()
             except Exception as e:
                 st.error(f"❌ Erro ao recarregar usuários: {e}")
-        
+
         if st.button("Voltar ao Dashboard", use_container_width=True, key="voltar_dashboard"):
             st.session_state.show_config = False
             st.rerun()
 
 # 🔹 Dashboard Principal (quando não está no modo configuração)
 else:
-    # 🔹 Upload ou carregamento do banco
-    with st.expander("Importar Dados", expanded=False):
+    # Inicializar df
+    df = None
+
+    # 🔹 Carregamento automático dos dados do CSV após login
+    data_loaded_from_csv = False
+    csv_path = os.path.join(os.path.dirname(__file__), "..", "data", "raw", "vendas_clean.csv")
+    if os.path.exists(csv_path):
+        st.info("Carregando dados automaticamente do arquivo CSV...")
+        try:
+            # Carregar e processar CSV automaticamente
+            df_csv = pd.read_csv(csv_path, sep=",", dtype=str)
+
+            # Validar e padronizar estrutura
+            df_csv = validar_e_padronizar_csv(df_csv)
+
+            # Processar dados (correção e validação)
+            linhas_corrigidas = []
+            for _, row in df_csv.iterrows():
+                row = corrigir_linha(row)
+                erros = validar_linha(row)
+                row_dict = row.to_dict()
+                row_dict['erros'] = ", ".join(erros) if erros else ""
+                linhas_corrigidas.append(row_dict)
+
+            df = pd.DataFrame(linhas_corrigidas)
+
+            # Limpeza e formatação
+            df["nome_cliente"] = df["nome_cliente"].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else "")
+            df["bairro"] = df["bairro"].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else "")
+            df["cidade"] = df["cidade"].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else "")
+            df["forma_pagamento"] = df["forma_pagamento"].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else "")
+            df["nome_vendedor"] = df["nome_vendedor"].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else "")
+            df["endereco"] = df.apply(lambda x: str(x["endereco"]).split(",")[0] if pd.notna(x["endereco"]) else "", axis=1)
+            df["telefone"] = df["telefone"].astype(str).str.extract(r'(\d{10,11})')[0]
+
+            # Datas
+            for coluna in ["data_compra", "data_venda"]:
+                df[coluna + "_dt"] = pd.to_datetime(df[coluna], format="%d/%m/%Y", errors="coerce")
+                df[coluna] = df[coluna + "_dt"].dt.strftime("%d/%m/%Y")
+
+            def preencher_data_nascimento(valor):
+                try:
+                    dt = pd.to_datetime(valor, dayfirst=True, errors='coerce')
+                    if pd.isna(dt):
+                        idade = random.randint(18, 65)
+                        ano = pd.Timestamp.today().year - idade
+                        mes = random.randint(1, 12)
+                        dia = random.randint(1, 28)
+                        dt = pd.Timestamp(year=ano, month=mes, day=dia)
+                    return dt.strftime("%d/%m/%Y")
+                except:
+                    return ""
+            df["data_nascimento"] = df["data_nascimento"].apply(preencher_data_nascimento)
+
+            data_loaded_from_csv = True
+            st.session_state['data_processed'] = True
+            st.success("✅ Dados carregados automaticamente do CSV!")
+        except Exception as e:
+            st.error(f"❌ Erro ao carregar CSV automaticamente: {e}")
+            df = carregar_dados_sqlite()
+            st.session_state['data_processed'] = False
+    else:
+        df = carregar_dados_sqlite()
+        st.session_state['data_processed'] = False
+
+    # 🔹 Upload ou carregamento adicional (opcional)
+    with st.expander("Importar Dados Adicionais", expanded=False):
         if st.session_state.permissions.get("upload_csv", True):
             uploaded_file = st.file_uploader("Envie seu arquivo CSV", type="csv")
         else:
@@ -641,7 +885,7 @@ else:
             st.info(f"Separador detectado por {'vírgula' if separador == ',' else 'ponto e vírgula'}")
 
             # Ler CSV com separador detectado
-            df = pd.read_csv(uploaded_file, sep=separador)
+            df = pd.read_csv(uploaded_file, sep=separador, dtype=str)
 
             # Validar e padronizar estrutura
             df = validar_e_padronizar_csv(df)
@@ -669,69 +913,70 @@ else:
             st.info("Certifique-se de que o arquivo é um CSV válido e tente novamente.")
             df = pd.DataFrame()  # DataFrame vazio para evitar erros downstream
     else:
-        #st.subheader("Carregando dados")
-        df = carregar_dados_sqlite()
+        if not data_loaded_from_csv:
+            #st.subheader("Carregando dados")
+            df = carregar_dados_sqlite()
 
-        # Se não há dados no banco, tentar carregar automaticamente do CSV
-        if df.empty:
-            csv_path = os.path.join(os.path.dirname(__file__), "..", "data", "raw", "vendas_clean.csv")
-            if os.path.exists(csv_path):
-                st.info("🔄 Carregando dados automaticamente do arquivo CSV...")
-                try:
-                    # Carregar e processar CSV automaticamente
-                    df_csv = pd.read_csv(csv_path, sep=";", dtype=str)
+            # Se não há dados no banco, tentar carregar automaticamente do CSV
+            if df.empty:
+                csv_path = os.path.join(os.path.dirname(__file__), "..", "data", "raw", "vendas_clean.csv")
+                if os.path.exists(csv_path):
+                    st.info("🔄 Carregando dados automaticamente do arquivo CSV...")
+                    try:
+                        # Carregar e processar CSV automaticamente
+                        df_csv = pd.read_csv(csv_path, sep=",", dtype=str)
 
-                    # Validar e padronizar estrutura
-                    df_csv = validar_e_padronizar_csv(df_csv)
+                        # Validar e padronizar estrutura
+                        df_csv = validar_e_padronizar_csv(df_csv)
 
-                    # Processar dados (correção e validação)
-                    linhas_corrigidas = []
-                    for _, row in df_csv.iterrows():
-                        row = corrigir_linha(row)
-                        erros = validar_linha(row)
-                        row_dict = row.to_dict()
-                        row_dict['erros'] = ", ".join(erros) if erros else ""
-                        linhas_corrigidas.append(row_dict)
+                        # Processar dados (correção e validação)
+                        linhas_corrigidas = []
+                        for _, row in df_csv.iterrows():
+                            row = corrigir_linha(row)
+                            erros = validar_linha(row)
+                            row_dict = row.to_dict()
+                            row_dict['erros'] = ", ".join(erros) if erros else ""
+                            linhas_corrigidas.append(row_dict)
 
-                    df = pd.DataFrame(linhas_corrigidas)
+                        df = pd.DataFrame(linhas_corrigidas)
 
-                    # Limpeza e formatação
-                    df["nome_cliente"] = df["nome_cliente"].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else "")
-                    df["bairro"] = df["bairro"].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else "")
-                    df["cidade"] = df["cidade"].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else "")
-                    df["forma_pagamento"] = df["forma_pagamento"].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else "")
-                    df["nome_vendedor"] = df["nome_vendedor"].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else "")
-                    df["endereco"] = df.apply(lambda x: str(x["endereco"]).split(",")[0] if pd.notna(x["endereco"]) else "", axis=1)
-                    df["telefone"] = df["telefone"].astype(str).str.extract(r'(\d{10,11})')[0]
+                        # Limpeza e formatação
+                        df["nome_cliente"] = df["nome_cliente"].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else "")
+                        df["bairro"] = df["bairro"].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else "")
+                        df["cidade"] = df["cidade"].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else "")
+                        df["forma_pagamento"] = df["forma_pagamento"].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else "")
+                        df["nome_vendedor"] = df["nome_vendedor"].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else "")
+                        df["endereco"] = df.apply(lambda x: str(x["endereco"]).split(",")[0] if pd.notna(x["endereco"]) else "", axis=1)
+                        df["telefone"] = df["telefone"].astype(str).str.extract(r'(\d{10,11})')[0]
 
-                    # Datas
-                    for coluna in ["data_compra", "data_venda"]:
-                        df[coluna + "_dt"] = pd.to_datetime(df[coluna], format="%d/%m/%Y", errors="coerce")
-                        df[coluna] = df[coluna + "_dt"].dt.strftime("%d/%m/%Y")
+                        # Datas
+                        for coluna in ["data_compra", "data_venda"]:
+                            df[coluna + "_dt"] = pd.to_datetime(df[coluna], format="%d/%m/%Y", errors="coerce")
+                            df[coluna] = df[coluna + "_dt"].dt.strftime("%d/%m/%Y")
 
-                    def preencher_data_nascimento(valor):
-                        try:
-                            dt = pd.to_datetime(valor, dayfirst=True, errors='coerce')
-                            if pd.isna(dt):
-                                idade = random.randint(18, 65)
-                                ano = pd.Timestamp.today().year - idade
-                                mes = random.randint(1, 12)
-                                dia = random.randint(1, 28)
-                                dt = pd.Timestamp(year=ano, month=mes, day=dia)
-                            return dt.strftime("%d/%m/%Y")
-                        except:
-                            return ""
-                    df["data_nascimento"] = df["data_nascimento"].apply(preencher_data_nascimento)
+                        def preencher_data_nascimento(valor):
+                            try:
+                                dt = pd.to_datetime(valor, dayfirst=True, errors='coerce')
+                                if pd.isna(dt):
+                                    idade = random.randint(18, 65)
+                                    ano = pd.Timestamp.today().year - idade
+                                    mes = random.randint(1, 12)
+                                    dia = random.randint(1, 28)
+                                    dt = pd.Timestamp(year=ano, month=mes, day=dia)
+                                return dt.strftime("%d/%m/%Y")
+                            except:
+                                return ""
+                        df["data_nascimento"] = df["data_nascimento"].apply(preencher_data_nascimento)
 
-                    st.success("✅ Dados carregados automaticamente do CSV!")
+                        st.success("✅ Dados carregados automaticamente do CSV!")
 
-                except Exception as e:
-                    st.error(f"❌ Erro ao carregar CSV automaticamente: {e}")
+                    except Exception as e:
+                        st.error(f"❌ Erro ao carregar CSV automaticamente: {e}")
+                        st.warning("⚠️ Nenhum dado encontrado. Use 'Importar Dados' para carregar um arquivo CSV.")
+                        st.stop()
+                else:
                     st.warning("⚠️ Nenhum dado encontrado. Use 'Importar Dados' para carregar um arquivo CSV.")
                     st.stop()
-            else:
-                st.warning("⚠️ Nenhum dado encontrado. Use 'Importar Dados' para carregar um arquivo CSV.")
-                st.stop()
 
     # 🔹 Executar Pipeline (sempre disponível após carregamento dos dados)
     with st.expander("Executar Pipeline", expanded=False):
@@ -782,6 +1027,10 @@ else:
     # Limpar lista após criar DataFrame
     del linhas_corrigidas
 
+    # Converter colunas numéricas
+    df_corrigido["quantidade"] = pd.to_numeric(df_corrigido["quantidade"], errors="coerce").fillna(0).astype(int)
+    df_corrigido["valor_produto"] = pd.to_numeric(df_corrigido["valor_produto"], errors="coerce").fillna(0.0).astype(float)
+
     # 🔹 Limpeza e formatação
     def formatar_texto(texto):
         if pd.isna(texto):
@@ -829,53 +1078,59 @@ else:
     # 🔹 Filtros na sidebar
     st.sidebar.header("Filtros")
 
-    # Aplicar permissões para filtros
-    if st.session_state.permissions.get("ver_filtros", True):
-        # Para user: filtrar apenas pela loja e vendedor atribuído (apenas seus próprios dados)
-        if st.session_state.role == "user":
-            # User vê apenas dados da sua loja e apenas suas próprias vendas
-            filtro_loja = [st.session_state.loja_usuario]
-            filtro_vendedor = [st.session_state.nome_usuario]
+    # 🔹 CORREÇÃO CRÍTICA: Definir filtros baseados no perfil do usuário
+    if st.session_state.role == "user":
+        # 🔹 USER: vê apenas dados do PRÓPRIO usuário (nome_vendedor = nome_usuario)
+        filtro_loja = [st.session_state.loja_usuario]
+        # Apenas vendas onde o nome do vendedor é igual ao nome do usuário logado
+        filtro_vendedor = [st.session_state.nome_usuario]
+        
+    elif st.session_state.role == "manager" and st.session_state.loja_usuario != "Todas lojas":
+        # 🔹 MANAGER: vê dados de TODOS os vendedores da SUA loja
+        filtro_loja = [st.session_state.loja_usuario]
+        filtro_vendedor = df_corrigido[df_corrigido["nome_loja"] == st.session_state.loja_usuario]["nome_vendedor"].dropna().unique()
+    else:
+        # 🔹 ADMIN ou manager com "Todas" as lojas
+        filtro_loja = df_corrigido["nome_loja"].dropna().unique()
+        filtro_vendedor = df_corrigido["nome_vendedor"].dropna().unique()
 
-        # Para manager, filtrar apenas pela loja de atuação
-        elif st.session_state.role == "manager" and st.session_state.loja_usuario != "Todas":
-            # Manager vê apenas dados da sua loja
-            filtro_loja = [st.session_state.loja_usuario]
+    # 🔹 Filtros adicionais (sempre aplicados, mas UI só se tiver permissão)
+    filtro_pagamento = df_corrigido["forma_pagamento"].dropna().unique()
+    filtro_produto = df_corrigido["nome_produto"].dropna().unique()
+    filtro_status_usuario = ["Ativo"]  # Por padrão, mostrar apenas ativos
+
+    # 🔹 Se tem permissão para ver filtros, mostrar interface para ajustar
+    if st.session_state.permissions.get("ver_filtros", True):
+        # Para USER, não permitir ajustar vendedor - já está fixo no próprio nome
+        if st.session_state.role == "user":
+            st.sidebar.info(f"Vendedor: {st.session_state.nome_usuario}")
+            # Não mostrar multiselect para user
+            
+        # Para manager, permitir ajustar vendedores dentro da loja
+        elif st.session_state.role == "manager" and st.session_state.loja_usuario != "Todas lojas":
             filtro_vendedor = st.sidebar.multiselect("Vendedor",
                 df_corrigido[df_corrigido["nome_loja"] == st.session_state.loja_usuario]["nome_vendedor"].dropna().unique(),
-                default=list(df_corrigido[df_corrigido["nome_loja"] == st.session_state.loja_usuario]["nome_vendedor"].dropna().unique()))
-        else:
-            # Admin ou manager com "Todas" as lojas
+                default=filtro_vendedor)
+        elif st.session_state.role in ["admin", "manager"]:
+            # Admin/manager podem ajustar loja e vendedor
             filtro_loja = st.sidebar.multiselect("Loja", df_corrigido["nome_loja"].dropna().unique(),
-                                                 default=list(df_corrigido["nome_loja"].dropna().unique()))
+                                                 default=filtro_loja)
             filtro_vendedor = st.sidebar.multiselect("Vendedor", df_corrigido["nome_vendedor"].dropna().unique(),
-                                                     default=list(df_corrigido["nome_vendedor"].dropna().unique()))
+                                                     default=filtro_vendedor)
 
         # Filtros adicionais para admin/manager
         if st.session_state.role in ["admin", "manager"]:
             filtro_pagamento = st.sidebar.multiselect("Forma de Pagamento", df_corrigido["forma_pagamento"].dropna().unique(),
-                                                      default=list(df_corrigido["forma_pagamento"].dropna().unique()))
+                                                      default=filtro_pagamento)
             filtro_produto = st.sidebar.multiselect("Produto", df_corrigido["nome_produto"].dropna().unique(),
-                                                   default=list(df_corrigido["nome_produto"].dropna().unique()))
+                                                   default=filtro_produto)
 
             filtro_status_usuario = st.sidebar.multiselect(
                 "Status do Usuário",
                 ["Ativo", "Desativado"],
-                default=["Ativo"],  # Por padrão, mostrar apenas ativos
+                default=filtro_status_usuario,
                 help="Filtrar vendas por status do usuário responsável"
             )
-        else:
-            # Para user: filtros limitados ou nenhum
-            filtro_pagamento = df_corrigido["forma_pagamento"].dropna().unique()
-            filtro_produto = df_corrigido["nome_produto"].dropna().unique()
-            filtro_status_usuario = ["Ativo"]  # Usuários normais só veem ativos
-    else:
-        # Se não tem permissão para ver filtros, usar todos os valores
-        filtro_loja = df_corrigido["nome_loja"].dropna().unique()
-        filtro_vendedor = df_corrigido["nome_vendedor"].dropna().unique()
-        filtro_pagamento = df_corrigido["forma_pagamento"].dropna().unique()
-        filtro_produto = df_corrigido["nome_produto"].dropna().unique()
-        filtro_status_usuario = ["Ativo"]
 
     # 🔹 Filtro de datas (data_venda) - formato brasileiro
     data_min = df_corrigido["data_venda_dt"].min().date()
@@ -884,30 +1139,9 @@ else:
     fim = st.sidebar.date_input("Data final - Venda (dd/mm/aaaa)", value=data_max, format="DD/MM/YYYY")
     st.sidebar.caption("Calendário e datas no padrão brasileiro: dia/mês/ano. Se o calendário aparecer em inglês, ajuste o idioma do navegador para português.")
 
-    # 🔹 Aplicar filtros
-    if st.session_state.permissions.get("analisar_todas_lojas", False):
-        # Se pode analisar todas as lojas, não filtra por loja
-        df_filtrado = df_corrigido[
-            (df_corrigido["nome_vendedor"].isin(filtro_vendedor)) &
-            (df_corrigido["forma_pagamento"].isin(filtro_pagamento)) &
-            (df_corrigido["nome_produto"].isin(filtro_produto)) &
-            (df_corrigido["data_venda_dt"] >= pd.to_datetime(inicio)) &
-            (df_corrigido["data_venda_dt"] <= pd.to_datetime(fim))
-        ]
-
-        # Dividir 'Cartão' em 'Cartão de Débito' e 'Cartão de Crédito'
-        cartao_rows = df_filtrado[df_filtrado['forma_pagamento'] == 'Cartão']
-        if not cartao_rows.empty:
-            num_cartao = len(cartao_rows)
-            num_debito = num_cartao // 2
-            debito_rows = cartao_rows.iloc[:num_debito].copy()
-            debito_rows['forma_pagamento'] = 'Cartão de Débito'
-            credito_rows = cartao_rows.iloc[num_debito:].copy()
-            credito_rows['forma_pagamento'] = 'Cartão de Crédito'
-            df_filtrado = df_filtrado[df_filtrado['forma_pagamento'] != 'Cartão']
-            df_filtrado = pd.concat([df_filtrado, debito_rows, credito_rows], ignore_index=True)
-    else:
-        # Aplicar filtros baseados no perfil do usuário
+    # 🔹 Aplicar filtros - CORREÇÃO: Simplificar lógica de filtragem
+    try:
+        # Aplicar filtros básicos para todos os usuários
         df_filtrado = df_corrigido[
             (df_corrigido["nome_loja"].isin(filtro_loja)) &
             (df_corrigido["nome_vendedor"].isin(filtro_vendedor)) &
@@ -929,19 +1163,18 @@ else:
             df_filtrado = df_filtrado[df_filtrado['forma_pagamento'] != 'Cartão']
             df_filtrado = pd.concat([df_filtrado, debito_rows, credito_rows], ignore_index=True)
 
-    # 🔹 Aplicar filtro de status do usuário (se aplicável)
-    if 'filtro_status_usuario' in locals() and filtro_status_usuario:
-        # Para aplicar filtro de status, precisamos mapear vendas para usuários
-        # Por enquanto, manter todas as vendas visíveis para admin/manager
-        # Futuramente pode ser implementado mapeamento venda->usuário
-        pass
-
-
+    except Exception as e:
+        st.error(f"❌ Erro ao aplicar filtros: {e}")
+        # Fallback: usar dados não filtrados
+        df_filtrado = df_corrigido.copy()
 
     # 🔹 VERIFICAR SE df_filtrado EXISTE ANTES DE USAR
-    if 'df_filtrado' not in locals() and 'df_filtrado' not in globals():
-        # Se df_filtrado não foi definido, usar df_corrigido como fallback
+    if 'df_filtrado' not in locals() or df_filtrado.empty:
+        st.info("Nenhum dado encontrado com os filtros aplicados. Verifique os filtros selecionados.")
+        # Usar df_corrigido como fallback para evitar erros
         df_filtrado = df_corrigido.copy()
+
+
 
     # 🔹 Indicadores de Vendas
     if st.session_state.permissions.get("ver_indicadores", True) and not df_filtrado.empty:
@@ -982,18 +1215,24 @@ else:
                     loja_top = vendas_por_loja.index[0]
                     valor_loja = vendas_por_loja.iloc[0]
                     st.metric("Loja Destaque", loja_top, delta=f"R$ {valor_loja:,.2f}")
+                else:
+                    st.metric("Loja Destaque", "N/A")
             
             with card3:
                 if not vendas_por_produto.empty:
                     produto_top = vendas_por_produto.index[0]
                     valor_produto = vendas_por_produto.iloc[0]
                     st.metric("Campeão de Vendas", produto_top, delta=f"R$ {valor_produto:,.2f}")
+                else:
+                    st.metric("Campeão de Vendas", "N/A")
             
             with card4:
                 if not vendas_por_vendedor.empty:
                     vendedor_top = vendas_por_vendedor.index[0]
                     valor_vendedor = vendas_por_vendedor.iloc[0]
                     st.metric("Vendedor Destaque", vendedor_top, delta=f"R$ {valor_vendedor:,.2f}")
+                else:
+                    st.metric("Vendedor Destaque", "N/A")
             
             with card5:
                 st.metric("Média por Transação", f"R$ {ticket_medio:,.2f}")
@@ -1003,17 +1242,11 @@ else:
         except Exception as e:
             st.error(f"❌ Erro ao calcular indicadores: {e}")
 
-    # 🔹 Gráficos Interativos
-    if st.session_state.permissions.get("ver_graficos", True) and not df_filtrado.empty:
+    # 🔹 Gráficos Interativos - CORREÇÃO: Simplificar lógica e garantir que apareçam
+    if st.session_state.permissions.get("ver_graficos", True):
         st.subheader("Insights Interativos")
         
         # 🔹 PALETAS DE CORES DEFINIDAS
-        loja_colors = ['#9B59B6', "#B8860B", "#2B50E4"]  # Lilac, Aged Gold, Blue for nome_loja
-        pie_colors = ['#9B59B6', '#B8860B', '#2B50E4', "#989795", '#27AE60']  # Lilac, Aged Gold, Blue, Orange, Green for pie
-        product_colors = ['#9B59B6', '#B8860B', '#2B50E4']  # Same for products
-        cores_lilas = ['#9B59B6', '#B8860B', '#2B50E4']  # For bars and lines
-
-        # 🔹 MAPA DE CORES FIXO PARA LOJAS (consistente entre perfis)
         loja_color_map = {
             'Loja Bairro': "#E68422",
             'Loja Centro': '#9B59B6',
@@ -1027,421 +1260,359 @@ else:
             'Loja Shopping': 'Shopping'
         }
         
+        # 🔹 DEFINIR AS TABS
         tab1, tab2, tab3 = st.tabs(["Por Loja", "Evolução Temporal", "Por Produto"])
         
         with tab1:
             col_chart1, col_chart2 = st.columns(2)
 
-        with col_chart1:
-            # Vendas por loja
-            vendas_loja = df_filtrado.groupby('nome_loja').agg({
-                'valor_total_calculado': 'sum'
-            }).reset_index()
+            with col_chart1:
+                # Vendas por loja
+                if not df_filtrado.empty and 'nome_loja' in df_filtrado.columns:
+                    vendas_loja = df_filtrado.groupby('nome_loja').agg({
+                        'valor_total_calculado': 'sum'
+                    }).reset_index()
 
-            # Criar coluna com nome curto da loja (remover "Loja ")
-            vendas_loja['nome_loja_curto'] = vendas_loja['nome_loja'].str.replace('Loja ', '', regex=False)
+                    if not vendas_loja.empty:
+                        # Criar coluna com nome curto da loja
+                        vendas_loja['nome_loja_curto'] = vendas_loja['nome_loja'].str.replace('Loja ', '', regex=False)
+                        vendas_loja['valor_formatado'] = vendas_loja['valor_total_calculado'].apply(
+                            lambda x: f"R$ {x:,.2f}".replace(',', 'temp').replace('.', ',').replace('temp', '.')
+                        )
+                        vendas_loja['nome_loja_display'] = vendas_loja['nome_loja'].map(loja_display_map)
 
-            # 🔹 FORMATAR VALOR PARA BRASILEIRO NO HOVER
-            vendas_loja['valor_formatado'] = vendas_loja['valor_total_calculado'].apply(
-                lambda x: f"R$ {x:,.2f}".replace(',', 'temp').replace('.', ',').replace('temp', '.')
-            )
+                        fig_lojas = px.bar(
+                            vendas_loja,
+                            x='nome_loja_display',
+                            y='valor_total_calculado',
+                            title="Vendas por Loja",
+                            color='nome_loja',
+                            color_discrete_map=loja_color_map,
+                            labels={'nome_loja_display': 'Loja', 'valor_total_calculado': 'Valor Total (R$)'},
+                            text=vendas_loja['valor_formatado']
+                        )
 
-            # 🔹 MAPEAR CORES PARA LOJAS NO DATAFRAME
-            vendas_loja['cor_loja'] = vendas_loja['nome_loja_curto'].map(loja_color_map)
+                        fig_lojas.update_layout(
+                            title={'text': "Vendas por loja", 'x': 0.5, 'xanchor': 'center'},
+                            yaxis=dict(tickformat='R$ ,.2f'),
+                            legend_title_text=None,
+                            legend=dict(font=dict(size=14))
+                        )
 
-            # 🔹 CRIAR COLUNA PARA EXIBIÇÃO SIMPLIFICADA
-            vendas_loja['nome_loja_display'] = vendas_loja['nome_loja'].map(loja_display_map)
+                        fig_lojas.update_traces(
+                            hovertemplate='<b>%{x}</b><br>%{text}<extra></extra>',
+                            textposition='none'
+                        )
 
-            fig_lojas = px.bar(
-                vendas_loja,
-                x='nome_loja_display',
-                y='valor_total_calculado',
-                title="Vendas por Loja",
-                color='nome_loja',
-                color_discrete_map=loja_color_map,  # 🔹 USAR MAPA FIXO DE CORES
-                labels={'nome_loja_display': 'Loja', 'valor_total_calculado': 'Valor Total (R$)'},
-                text=vendas_loja['valor_formatado']  # 🔹 TEXTO FORMATADO PARA HOVER
-            )
-
-            # 🔹 FORMATAR EIXO Y PARA MOSTRAR R$ EM VEZ DE K
-            fig_lojas.update_layout(
-                title={
-                    'text': "Vendas por loja",
-                    'x': 0.5,
-                    'xanchor': 'center',
-                    'font': {
-                        'size': 18,
-                        'family': "Arial, sans-serif"
-                    }
-                },
-                yaxis=dict(
-                    tickformat='R$ ,.2f'  # 🔹 FORMATAÇÃO EM REAIS COM 2 CASAS DECIMAIS
-                ),
-                legend_title_text=None,  # 🔹 REMOVER TÍTULO DA LEGENDA
-                legend=dict(font=dict(size=14))  # 🔹 AUMENTAR FONTE DA LEGENDA
-            )
-
-            # 🔹 FORMATAR HOVER PARA BRASILEIRO
-            fig_lojas.update_traces(
-                hovertemplate='<b>%{x}</b><br>%{text}<extra></extra>',
-                textposition='none'  # 🔹 NÃO MOSTRAR TEXTO NAS BARRAS
-            )
-
-            st.plotly_chart(fig_lojas, use_container_width=True)
+                        st.plotly_chart(fig_lojas, use_container_width=True)
+                    else:
+                        st.info("📊 Não há dados de vendas por loja para exibir.")
+                else:
+                    st.info("📊 Aguardando dados para exibir gráfico de vendas por loja.")
 
             with col_chart2:
-                # MELHORIA: Top 10 vendedores mostrando a LOJA
-                top_vendedores_com_loja = df_filtrado.groupby(['nome_vendedor', 'nome_loja']).agg({
-                    'valor_total_calculado': 'sum'
-                }).reset_index().nlargest(10, 'valor_total_calculado')
+                # Top vendedores
+                if not df_filtrado.empty and 'nome_vendedor' in df_filtrado.columns and 'nome_loja' in df_filtrado.columns:
+                    top_vendedores_com_loja = df_filtrado.groupby(['nome_vendedor', 'nome_loja']).agg({
+                        'valor_total_calculado': 'sum'
+                    }).reset_index().nlargest(10, 'valor_total_calculado')
 
-                # Criar coluna com nome curto da loja (remover "Loja ")
-                top_vendedores_com_loja['nome_loja_curto'] = top_vendedores_com_loja['nome_loja'].str.replace('Loja ', '', regex=False)
+                    if not top_vendedores_com_loja.empty:
+                        top_vendedores_com_loja['nome_loja_curto'] = top_vendedores_com_loja['nome_loja'].str.replace('Loja ', '', regex=False)
+                        top_vendedores_com_loja['valor_formatado'] = top_vendedores_com_loja['valor_total_calculado'].apply(
+                            lambda x: f"R$ {x:,.2f}".replace(',', 'temp').replace('.', ',').replace('temp', '.')
+                        )
+                        top_vendedores_com_loja['nome_loja_display'] = top_vendedores_com_loja['nome_loja'].map(loja_display_map)
+                        top_vendedores_com_loja = top_vendedores_com_loja.sort_values('valor_total_calculado', ascending=True)
 
-                # 🔹 CRIAR COLUNA PARA EXIBIÇÃO SIMPLIFICADA
-                top_vendedores_com_loja['nome_loja_display'] = top_vendedores_com_loja['nome_loja'].map(loja_display_map)
+                        fig_vendedores = px.bar(
+                            top_vendedores_com_loja,
+                            x='valor_total_calculado',
+                            y='nome_vendedor',
+                            orientation='h',
+                            title="Total por vendedor",
+                            color='nome_loja',
+                            color_discrete_map=loja_color_map,
+                            labels={'valor_total_calculado': 'Valor Total (R$)', 'nome_vendedor': 'Vendedor'},
+                            text=top_vendedores_com_loja['valor_formatado']
+                        )
 
-                # 🔹 FORMATAR VALOR PARA BRASILEIRO NO HOVER
-                top_vendedores_com_loja['valor_formatado'] = top_vendedores_com_loja['valor_total_calculado'].apply(
-                    lambda x: f"R$ {x:,.2f}".replace(',', 'temp').replace('.', ',').replace('temp', '.')
-                )
+                        fig_vendedores.update_layout(
+                            yaxis={'categoryorder': 'total ascending'},
+                            title={'text': "Total por vendedor", 'x': 0.5, 'xanchor': 'center'},
+                            xaxis=dict(tickformat='R$ ,.2f'),
+                            legend_title_text=None,
+                            legend=dict(font=dict(size=14))
+                        )
 
-                # Ordenar por valor total (maior para menor) para manter cores consistentes
-                top_vendedores_com_loja = top_vendedores_com_loja.sort_values('valor_total_calculado', ascending=True)
+                        fig_vendedores.update_traces(
+                            hovertemplate='<b>%{y}</b><br>%{text}<br>Loja: %{fullData.name}<extra></extra>',
+                            textposition='none'
+                        )
 
-                fig_vendedores = px.bar(
-                    top_vendedores_com_loja,
-                    x='valor_total_calculado',
-                    y='nome_vendedor',
-                    orientation='h',
-                    title="Total por vendedor",
-                    color='nome_loja',
-                    color_discrete_map=loja_color_map,  # 🔹 USAR MAPA FIXO DE CORES
-                    labels={'valor_total_calculado': 'Valor Total (R$)', 'nome_vendedor': 'Vendedor', 'nome_loja_display': 'Loja'},
-                    text=top_vendedores_com_loja['valor_formatado']  # 🔹 TEXTO FORMATADO PARA HOVER
-                )
+                        st.plotly_chart(fig_vendedores, use_container_width=True)
+                    else:
+                        st.info("📊 Não há dados de vendedores para exibir.")
+                else:
+                    st.info("📊 Aguardando dados para exibir gráfico de vendedores.")
 
-                # 🔹 FORMATAR EIXO X PARA MOSTRAR R$ EM VEZ DE K
-                fig_vendedores.update_layout(
-                    yaxis={'categoryorder': 'total ascending'},
-                    title={
-                        'text': "Total por vendedor",
-                        'x': 0.5,
-                        'xanchor': 'center',
-                        'font': {
-                            'size': 18,
-                            'family': "Arial, sans-serif"
-                        }
-                    },
-                    xaxis=dict(
-                        tickformat='R$ ,.2f'  # 🔹 FORMATAÇÃO EM REAIS COM 2 CASAS DECIMAIS
-                    ),
-                    legend_title_text=None,  # 🔹 REMOVER TÍTULO DA LEGENDA
-                    legend=dict(font=dict(size=14))  # 🔹 AUMENTAR FONTE DA LEGENDA
-                )
+        with tab2:
+            col_chart3, col_chart4 = st.columns(2)
 
-                # 🔹 FORMATAR HOVER PARA BRASILEIRO
-                fig_vendedores.update_traces(
-                    hovertemplate='<b>%{y}</b><br>%{text}<br>Loja: %{fullData.name}<extra></extra>',
-                    textposition='none'  # 🔹 NÃO MOSTRAR TEXTO NAS BARRAS
-                )
-
-                st.plotly_chart(fig_vendedores, use_container_width=True)
-
-    with tab2:
-        col_chart3, col_chart4 = st.columns(2)
-
-        with col_chart3:
-                # MELHORIA: Evolução temporal por LOJA com legenda interativa
-                if 'data_venda_dt' in df_filtrado.columns:
-                    # Criar colunas de mês e ano para agrupamento mensal
+            with col_chart3:
+                # Evolução temporal
+                if not df_filtrado.empty and 'data_venda_dt' in df_filtrado.columns and 'nome_loja' in df_filtrado.columns:
                     df_filtrado_copy = df_filtrado.copy()
                     df_filtrado_copy['month'] = df_filtrado_copy['data_venda_dt'].dt.month
                     df_filtrado_copy['year'] = df_filtrado_copy['data_venda_dt'].dt.year
 
-                    # Agrupar por mês, ano e loja (agregação mensal)
                     evolucao_lojas = df_filtrado_copy.groupby(['year', 'month', 'nome_loja']).agg({
                         'valor_total_calculado': 'sum'
                     }).reset_index()
 
-                    # Ordenar cronologicamente por ano e mês, e dentro de cada período por valor ascendente para empilhar do menor para o maior
-                    evolucao_lojas = evolucao_lojas.sort_values(['year', 'month', 'valor_total_calculado'])
+                    if not evolucao_lojas.empty:
+                        evolucao_lojas = evolucao_lojas.sort_values(['year', 'month', 'valor_total_calculado'])
+                        evolucao_lojas['nome_loja_curto'] = evolucao_lojas['nome_loja'].str.replace('Loja ', '', regex=False)
+                        evolucao_lojas['nome_loja_display'] = evolucao_lojas['nome_loja'].map(loja_display_map)
 
-                    # Criar coluna com nome curto da loja (remover "Loja ")
-                    evolucao_lojas['nome_loja_curto'] = evolucao_lojas['nome_loja'].str.replace('Loja ', '', regex=False)
+                        meses_pt = {
+                            1: 'jan', 2: 'fev', 3: 'mar', 4: 'abr', 5: 'mai', 6: 'jun',
+                            7: 'jul', 8: 'ago', 9: 'set', 10: 'out', 11: 'nov', 12: 'dez'
+                        }
+                        evolucao_lojas['data_display'] = evolucao_lojas.apply(
+                            lambda row: f"{meses_pt[row['month']]} {row['year']}", axis=1
+                        )
 
-                    # 🔹 CRIAR COLUNA PARA EXIBIÇÃO SIMPLIFICADA
-                    evolucao_lojas['nome_loja_display'] = evolucao_lojas['nome_loja'].map(loja_display_map)
+                        fig_evolucao = px.bar(
+                            evolucao_lojas,
+                            x='data_display',
+                            y='valor_total_calculado',
+                            color='nome_loja',
+                            title="Evolução das vendas por loja",
+                            color_discrete_map=loja_color_map,
+                            labels={'data_display': 'Data', 'valor_total_calculado': 'Valor Total (R$)'}
+                        )
 
-                    # Criar coluna de data formatada em português brasileiro
-                    meses_pt = {
-                        1: 'jan', 2: 'fev', 3: 'mar', 4: 'abr', 5: 'mai', 6: 'jun',
-                        7: 'jul', 8: 'ago', 9: 'set', 10: 'out', 11: 'nov', 12: 'dez'
-                    }
-                    evolucao_lojas['data_display'] = evolucao_lojas.apply(
-                        lambda row: f"{meses_pt[row['month']]} {row['year']}", axis=1
-                    )
+                        fig_evolucao.update_layout(
+                            hovermode='x unified',
+                            showlegend=True,
+                            barmode='stack',
+                            legend=dict(
+                                orientation="h",
+                                yanchor="bottom",
+                                y=1.02,
+                                xanchor="right",
+                                x=1,
+                                itemclick="toggle",
+                                itemdoubleclick="toggleothers",
+                                font=dict(size=14)
+                            ),
+                            yaxis=dict(tickformat='R$ ,.2f'),
+                            xaxis=dict(categoryorder='array', categoryarray=evolucao_lojas['data_display'].unique()),
+                            legend_title_text=None
+                        )
 
-                    fig_evolucao = px.bar(
-                        evolucao_lojas,
-                        x='data_display',
-                        y='valor_total_calculado',
-                        color='nome_loja',
-                        title="Evolução das vendas por loja",
-                        color_discrete_map=loja_color_map,  # 🔹 USAR MAPA FIXO DE CORES
-                        labels={'data_display': 'Data', 'valor_total_calculado': 'Valor Total (R$)', 'nome_loja_display': 'Loja'}
-                    )
+                        fig_evolucao.update_traces(
+                            hovertemplate='<b>%{fullData.name}</b><br>Data: %{x}<br>Valor: R$ %{y:,.2f}<extra></extra>'
+                        )
 
-                    # MELHORIA: Tornar o gráfico mais interativo com legenda clicável
-                    fig_evolucao.update_layout(
-                        hovermode='x unified',
-                        showlegend=True,
-                        barmode='stack',  # 🔹 EMPILHAR BARRAS PARA MOSTRAR TOTAL POR PERÍODO
-                        legend=dict(
-                            orientation="h",
-                            yanchor="bottom",
-                            y=1.02,
-                            xanchor="right",
-                            x=1,
-                            # Adiciona interatividade à legenda
-                            itemclick="toggle",
-                            itemdoubleclick="toggleothers",
-                            font=dict(size=14)  # 🔹 AUMENTAR FONTE DA LEGENDA
-                        ),
-                        yaxis=dict(
-                            tickformat='R$ ,.2f'  # 🔹 FORMATAÇÃO EM REAIS COM 2 CASAS DECIMAIS
-                        ),
-                        xaxis=dict(
-                            categoryorder='array',
-                            categoryarray=evolucao_lojas['data_display'].unique()
-                        ),
-                        legend_title_text=None  # 🔹 REMOVER TÍTULO DA LEGENDA
-                    )
+                        fig_evolucao.update_layout(legend_traceorder='reversed')
+                        st.plotly_chart(fig_evolucao, use_container_width=True)
+                    else:
+                        st.info("📊 Não há dados de evolução temporal para exibir.")
+                else:
+                    st.info("📊 Aguardando dados para exibir gráfico de evolução temporal.")
 
-                    # MELHORIA: Adicionar funcionalidades de interação
-                    fig_evolucao.update_traces(
-                        # Permite mostrar/esconder linhas clicando na legenda
-                        legendgrouptitle_font_size=12,
-                        # Adiciona mais interatividade
-                        hovertemplate='<b>%{fullData.name}</b><br>Data: %{x}<br>Valor: R$ %{y:,.2f}<extra></extra>'
-                    )
+            with col_chart4:
+                # Formas de pagamento
+                if not df_filtrado.empty and 'forma_pagamento' in df_filtrado.columns:
+                    pagamentos = df_filtrado.groupby('forma_pagamento').agg({
+                        'valor_total_calculado': 'sum',
+                        'quantidade': 'count'
+                    }).reset_index()
 
-                    # 🔹 Remover valores totais da legenda, manter apenas nomes das lojas
-                    # A legenda agora mostra apenas os nomes das lojas
+                    if not pagamentos.empty:
+                        total_valor = pagamentos['valor_total_calculado'].sum()
+                        pagamentos['porcentagem'] = (pagamentos['valor_total_calculado'] / total_valor * 100).round(1)
+                        pagamentos['valor_formatado'] = pagamentos['valor_total_calculado'].apply(
+                            lambda x: f'R$ {x:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.')
+                        )
 
-                    # 🔹 Reverter a ordem da legenda para mostrar totais de maior para menor
-                    fig_evolucao.update_layout(legend_traceorder='reversed')
+                        fig_pagamentos = px.pie(
+                            pagamentos,
+                            names='forma_pagamento',
+                            values='valor_total_calculado',
+                            title="Forma De Pagamento",
+                            color_discrete_map={'Cartão de Débito': '#9B59B6', 'Cartão de Crédito': '#B8860B', 'Dinheiro': '#2B50E4', 'Pix': '#E67E22', 'Boleto': '#27AE60'},
+                            custom_data=['valor_formatado', 'porcentagem']
+                        )
 
-                    # 🔹 Remover anotações com valores dentro do gráfico
-                    # Os valores mensais não serão exibidos no gráfico
+                        fig_pagamentos.update_traces(
+                            textposition='outside',
+                            texttemplate='<b>%{customdata[0]}</b><br><b>(%{customdata[1]}%)</b>',
+                            hovertemplate='<b>%{label}</b><br>Valor: %{customdata[0]}<br>Percentual: %{customdata[1]:.1f}%',
+                            marker=dict(line=dict(color='#ffffff', width=2))
+                        )
 
-                    st.plotly_chart(fig_evolucao, use_container_width=True)
+                        fig_pagamentos.update_layout(
+                            title={'text': "Distribuição por forma de pagamento", 'x': 0.5, 'xanchor': 'center'},
+                            margin=dict(t=80, b=80, l=80, r=80),
+                            showlegend=True,
+                            legend=dict(
+                                orientation="v",
+                                yanchor="middle",
+                                y=0.7,
+                                xanchor="left",
+                                x=1.15,
+                                font=dict(size=14)
+                            ),
+                            uniformtext_minsize=13.5,
+                            uniformtext_mode='hide'
+                        )
 
-        with col_chart4:
-            # Formas de pagamento - CORREÇÃO: Mostrar valor e porcentagem FORA DO GRÁFICO
-            pagamentos = df_filtrado.groupby('forma_pagamento').agg({
-                'valor_total_calculado': 'sum',
-                'quantidade': 'count'
-            }).reset_index()
-
-            # Calcular porcentagem
-            total_valor = pagamentos['valor_total_calculado'].sum()
-            pagamentos['porcentagem'] = (pagamentos['valor_total_calculado'] / total_valor * 100).round(1)
-
-            # Formatar valores para exibição
-            pagamentos['valor_formatado'] = pagamentos['valor_total_calculado'].apply(
-                lambda x: f'R$ {x:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.')
-            )
-
-            fig_pagamentos = px.pie(
-                pagamentos,
-                names='forma_pagamento',
-                values='valor_total_calculado',
-                title="Forma De Pagamento",
-                color_discrete_map={'Cartão de Débito': '#9B59B6', 'Cartão de Crédito': '#B8860B', 'Dinheiro': '#2B50E4', 'Pix': '#E67E22', 'Boleto': '#27AE60'},
-                custom_data=['valor_formatado', 'porcentagem']
-            )
-
-            # 🔹 MODIFICAÇÃO: Texto fora do gráfico em negrito
-            fig_pagamentos.update_traces(
-                textposition='outside',  # Texto fora do gráfico
-                texttemplate='<b>%{customdata[0]}</b><br><b>(%{customdata[1]}%)</b>',  # Texto em negrito
-                hovertemplate='<b>%{label}</b><br>Valor: %{customdata[0]}<br>Percentual: %{customdata[1]:.1f}%',
-                marker=dict(line=dict(color='#ffffff', width=2))
-            )
-
-            fig_pagamentos.update_layout(
-                title={
-                    'text': "Distribuição por orma de pagamento",
-                    'x': 0.5,
-                    'xanchor': 'center',
-                    'font': {
-                        'size': 18,
-                        'family': "Arial, sans-serif"
-                    }
-                },
-                # Ajustar margens para acomodar texto externo
-                margin=dict(t=80, b=80, l=80, r=80),
-                showlegend=True,
-                legend=dict(
-                    orientation="v",
-                    yanchor="middle",
-                    y=0.7,
-                    xanchor="left",
-                    x=1.15,
-                    font=dict(size=14)
-                ),
-                # Configurações para texto externo
-                uniformtext_minsize=13.5,
-                uniformtext_mode='hide'
-            )
-
-            st.plotly_chart(fig_pagamentos, use_container_width=True)
+                        st.plotly_chart(fig_pagamentos, use_container_width=True)
+                    else:
+                        st.info("📊 Não há dados de formas de pagamento para exibir.")
+                else:
+                    st.info("📊 Aguardando dados para exibir gráfico de formas de pagamento.")
         
         with tab3:
             col_chart5, col_chart6 = st.columns(2)
             
             with col_chart5:
-                # Produtos mais vendidos - AGORA EM CARDS
-                produtos_vendidos = df_filtrado.groupby('nome_produto').agg({
-                    'quantidade': 'sum'
-                }).nlargest(10, 'quantidade').reset_index()
+                # Produtos mais vendidos
+                if not df_filtrado.empty and 'nome_produto' in df_filtrado.columns:
+                    produtos_vendidos = df_filtrado.groupby('nome_produto').agg({
+                        'quantidade': 'sum'
+                    }).nlargest(10, 'quantidade').reset_index()
 
-                nova_linha()
+                    if not produtos_vendidos.empty:
+                        total_quantidade = produtos_vendidos['quantidade'].sum()
+                        produtos_vendidos['porcentagem'] = (produtos_vendidos['quantidade'] / total_quantidade * 100).round(1)
 
-                # Calcular porcentagem para cada produto
-                total_quantidade = produtos_vendidos['quantidade'].sum()
-                produtos_vendidos['porcentagem'] = (produtos_vendidos['quantidade'] / total_quantidade * 100).round(1)
+                        st.markdown("""
+                            <h3 style='font-size: 18px; font-weight: bold; margin-bottom: 20px; text-align: center;'>
+                                Produtos mais vendidos (Quantidade)
+                            </h3>
+                        """, unsafe_allow_html=True)
 
-                st.markdown("""
-                    <h3 style='font-size: 18px; font-weight: bold; margin-bottom: 20px; text-align: center;'>
-                        Produtos mais vendidos (Quantidade)
-                    </h3>
-                """, unsafe_allow_html=True)
+                        cols = st.columns(3)
+                        
+                        for i, (_, produto) in enumerate(produtos_vendidos.head(6).iterrows()):
+                            with cols[i % 3]:
+                                st.markdown(
+                                    f"""
+                                    <div style='
+                                        background: #2B50E4;
+                                        padding: 15px;
+                                        border-radius: 10px;
+                                        margin: 8px 0;
+                                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                                        color: white;
+                                        text-align: center;
+                                        height: 120px;
+                                        display: flex;
+                                        flex-direction: column;
+                                        justify-content: center;
+                                    '>
+                                        <h4 style='margin: 0; font-size: 14px; font-weight: bold;'>#{i+1} {produto['nome_produto']}</h4>
+                                        <div style='font-size: 20px; font-weight: bold; margin: 8px 0;'>{produto['quantidade']} un</div>
+                                        <div style='font-size: 12px; background: rgba(255,255,255,0.2); padding: 4px; border-radius: 5px;'>
+                                            {produto['porcentagem']}% do total
+                                        </div>
+                                    </div>
+                                    """,
+                                    unsafe_allow_html=True
+                                )
 
-                cols = st.columns(3)
-                
-                for i, (_, produto) in enumerate(produtos_vendidos.head(6).iterrows()):
-                    with cols[i % 3]:
-                        st.markdown(
-                            f"""
-                            <div style='
-                                background: #2B50E4;
-                                padding: 15px;
-                                border-radius: 10px;
-                                margin: 8px 0;
-                                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                                color: white;
-                                text-align: center;
-                                height: 120px;
-                                display: flex;
-                                flex-direction: column;
-                                justify-content: center;
-                            '>
-                                <h4 style='margin: 0; font-size: 14px; font-weight: bold;'>#{i+1} {produto['nome_produto']}</h4>
-                                <div style='font-size: 20px; font-weight: bold; margin: 8px 0;'>{produto['quantidade']} un</div>
-                                <div style='font-size: 12px; background: rgba(255,255,255,0.2); padding: 4px; border-radius: 5px;'>
-                                    {produto['porcentagem']}% do total
-                                </div>
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-
-                # 🔹 SE HOUVER MAIS DE 6 PRODUTOS, MOSTRAR OS DEMAIS EM LISTA SIMPLES PARA MELHOR LEITURA
-                if len(produtos_vendidos) > 6:
-                    with st.expander(f"Ver todos os {len(produtos_vendidos)} produtos"):
-                        df_expander = produtos_vendidos.iloc[6:].copy()
-                        df_expander['Posição'] = range(7, len(produtos_vendidos) + 1)
-                        df_expander = df_expander[['Posição', 'nome_produto', 'quantidade', 'porcentagem']]
-                        df_expander.columns = ['#', 'Produto', 'Unidade', '% do Total']
-                        st.dataframe(df_expander, use_container_width=True, hide_index=True)
+                        if len(produtos_vendidos) > 6:
+                            with st.expander(f"Ver todos os {len(produtos_vendidos)} produtos"):
+                                df_expander = produtos_vendidos.iloc[6:].copy()
+                                df_expander['Posição'] = range(7, len(produtos_vendidos) + 1)
+                                df_expander = df_expander[['Posição', 'nome_produto', 'quantidade', 'porcentagem']]
+                                df_expander.columns = ['#', 'Produto', 'Unidade', '% do Total']
+                                st.dataframe(df_expander, use_container_width=True, hide_index=True)
+                    else:
+                        st.info("📊 Não há dados de produtos vendidos para exibir.")
+                else:
+                    st.info("📊 Aguardando dados para exibir cards de produtos mais vendidos.")
 
             with col_chart6:
                 st.markdown("<div style='margin-top: 32px;'></div>", unsafe_allow_html=True)
 
-                # 🔹 Produtos com maior valor total
-                produtos_valor = df_filtrado.groupby('nome_produto').agg({
-                    'valor_total_calculado': 'sum'
-                }).nlargest(10, 'valor_total_calculado').reset_index()
+                # Produtos por valor
+                if not df_filtrado.empty and 'nome_produto' in df_filtrado.columns:
+                    produtos_valor = df_filtrado.groupby('nome_produto').agg({
+                        'valor_total_calculado': 'sum'
+                    }).nlargest(10, 'valor_total_calculado').reset_index()
 
-                # 🔹 FORMATAR VALOR PARA BRASILEIRO NO HOVER
-                produtos_valor['valor_formatado'] = produtos_valor['valor_total_calculado'].apply(
-                    lambda x: f"R$ {x:,.2f}".replace(',', 'temp').replace('.', ',').replace('temp', '.')
-                )
+                    if not produtos_valor.empty:
+                        produtos_valor['valor_formatado'] = produtos_valor['valor_total_calculado'].apply(
+                            lambda x: f"R$ {x:,.2f}".replace(',', 'temp').replace('.', ',').replace('temp', '.')
+                        )
 
-                # 🔹 Título estilizado
-                st.markdown("""
-                    <h3 style='
-                        text-align: center;
-                        font-size: 18px;
-                        font-family: Arial, sans-serif;
-                    '>
-                        Produtos por valor (Total)
-                    </h3>
-                """, unsafe_allow_html=True)
+                        st.markdown("""
+                            <h3 style='
+                                text-align: center;
+                                font-size: 18px;
+                                font-family: Arial, sans-serif;
+                            '>
+                                Produtos por valor (Total)
+                            </h3>
+                        """, unsafe_allow_html=True)
 
-                # 🔹 Cores estendidas para top 10 produtos
-                produtos_valor_colors = ['#9B59B6', '#B8860B', '#2B50E4', '#E67E22', '#27AE60',
-                                         '#FF6B6B', '#4ECDC4', '#45B7D1', '#FECA57', '#8B4513']
+                        produtos_valor_colors = ['#9B59B6', '#B8860B', '#2B50E4', '#E67E22', '#27AE60',
+                                                 '#FF6B6B', '#4ECDC4', '#45B7D1', '#FECA57', '#8B4513']
 
-                # 🔹 Gráfico de barras horizontais
-                fig_produtos_valor = px.bar(
-                    produtos_valor,
-                    x='valor_total_calculado',
-                    y='nome_produto',
-                    orientation='h',
-                    color='nome_produto',
-                    color_discrete_sequence=produtos_valor_colors,
-                    color_discrete_map={'Teclado Mecanico': '#989795'},
-                    labels={'valor_total_calculado': 'Valor Total (R$)', 'nome_produto': ''},
-                    text=produtos_valor['valor_formatado']  # 🔹 TEXTO FORMATADO PARA HOVER
-                )
+                        fig_produtos_valor = px.bar(
+                            produtos_valor,
+                            x='valor_total_calculado',
+                            y='nome_produto',
+                            orientation='h',
+                            color='nome_produto',
+                            color_discrete_sequence=produtos_valor_colors,
+                            labels={'valor_total_calculado': 'Valor Total (R$)', 'nome_produto': ''},
+                            text=produtos_valor['valor_formatado']
+                        )
 
-                # 🔹 Ajustes no layout para permitir reorganização dinâmica
-                fig_produtos_valor.update_layout(
-                    yaxis=dict(
-                        showticklabels=True,       # ✅ Mostrar rótulos para permitir ajuste
-                        title='',                  # 🔹 Sem título no eixo Y
-                        automargin=True,
-                        categoryorder='total ascending'  # 🔹 Ordenar por valor total para ajuste automático
-                    ),
-                    showlegend=True,
-                    legend=dict(
-                        orientation='v',
-                        yanchor='top',
-                        xanchor='left',
-                        x=1.02,
-                        itemclick='toggle',
-                        itemdoubleclick='toggleothers',
-                        font=dict(size=14)
-                    ),
-                    margin=dict(t=10, b=50, l=50, r=150),
-                    height=350,
-                    xaxis=dict(
-                        tickformat='R$ ,.2f'       # 🔹 FORMATAÇÃO EM REAIS COM 2 CASAS DECIMAIS
-                    )
-                )
+                        fig_produtos_valor.update_layout(
+                            yaxis=dict(
+                                showticklabels=True,
+                                title='',
+                                automargin=True,
+                                categoryorder='total ascending'
+                            ),
+                            showlegend=True,
+                            legend=dict(
+                                orientation='v',
+                                yanchor='top',
+                                xanchor='left',
+                                x=1.02,
+                                itemclick='toggle',
+                                itemdoubleclick='toggleothers',
+                                font=dict(size=14)
+                            ),
+                            margin=dict(t=10, b=50, l=50, r=150),
+                            height=350,
+                            xaxis=dict(tickformat='R$ ,.2f')
+                        )
 
-                # 🔹 FORMATAR HOVER PARA BRASILEIRO
-                fig_produtos_valor.update_traces(
-                    hovertemplate='<b>%{y}</b><br>%{text}<extra></extra>',
-                    textposition='none'  # 🔹 NÃO MOSTRAR TEXTO NAS BARRAS
-                )
+                        fig_produtos_valor.update_traces(
+                            hovertemplate='<b>%{y}</b><br>%{text}<extra></extra>',
+                            textposition='none',
+                            marker_line_width=0
+                        )
 
-                # 🔹 Remover bordas das barras para visual mais limpo
-                fig_produtos_valor.update_traces(
-                    marker_line_width=0
-                )
-
-                # 🔹 Exibir gráfico no Streamlit
-                st.plotly_chart(fig_produtos_valor, use_container_width=True)
+                        st.plotly_chart(fig_produtos_valor, use_container_width=True)
+                    else:
+                        st.info("📊 Não há dados de produtos por valor para exibir.")
+                else:
+                    st.info("📊 Aguardando dados para exibir gráfico de produtos por valor.")
 
     # 🔹 Tabela filtrada com expander e download
     if not df_filtrado.empty:
         with st.expander("Dados Filtrados", expanded=False):
-
-            cols_para_mostrar = [c for c in df_filtrado.columns if c not in ["id_venda", "index", "erros", "data_importacao", "data_registro", "data_compra_dt", "data_venda_dt", "data_compra"]]
+            cols_para_mostrar = [c for c in df_filtrado.columns if c not in ["id_venda", "index", "erros", "data_importacao", "data_registro", "data_compra_dt", "data_venda_dt", "data_compra", "valor_total_calculado"]]
             if "id_cliente" in cols_para_mostrar:
                 cols_para_mostrar.remove("id_cliente")
                 cols_para_mostrar = ["id_cliente"] + cols_para_mostrar

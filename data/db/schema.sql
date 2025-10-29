@@ -178,16 +178,16 @@ CREATE TABLE IF NOT EXISTS importacoes (
 -- TRIGGERS PARA INTEGRIDADE DOS DADOS
 -- =============================================
 
--- Trigger: Impede inserção em loja_vendedor se loja está finalizada
-CREATE TRIGGER IF NOT EXISTS trg_loja_vendedor_before_insert
-BEFORE INSERT ON loja_vendedor
-FOR EACH ROW
-BEGIN
-    SELECT CASE
-        WHEN (SELECT sellers_finalized FROM lojas WHERE codigo_loja = NEW.codigo_loja) = 1
-        THEN RAISE(ABORT, 'Loja está finalizada; não é possível adicionar vendedores')
-    END;
-END;
+-- Trigger removido: Permite inserção em loja_vendedor mesmo se loja está finalizada
+-- CREATE TRIGGER IF NOT EXISTS trg_loja_vendedor_before_insert
+-- BEFORE INSERT ON loja_vendedor
+-- FOR EACH ROW
+-- BEGIN
+--     SELECT CASE
+--         WHEN (SELECT sellers_finalized FROM lojas WHERE codigo_loja = NEW.codigo_loja) = 1
+--         THEN RAISE(ABORT, 'Loja está finalizada; não é possível adicionar vendedores')
+--     END;
+-- END;
 
 -- Trigger: Impede exclusão de relação se loja está finalizada
 CREATE TRIGGER IF NOT EXISTS trg_loja_vendedor_before_delete
@@ -198,6 +198,16 @@ BEGIN
         WHEN (SELECT sellers_finalized FROM lojas WHERE codigo_loja = OLD.codigo_loja) = 1
         THEN RAISE(ABORT, 'Loja está finalizada; não é possível remover vendedores')
     END;
+END;
+
+-- Trigger: Finaliza loja quando 2 vendedores são atribuídos
+CREATE TRIGGER IF NOT EXISTS trg_loja_vendedor_after_insert
+AFTER INSERT ON loja_vendedor
+FOR EACH ROW
+BEGIN
+    UPDATE lojas SET sellers_finalized = 1
+    WHERE codigo_loja = NEW.codigo_loja
+      AND (SELECT COUNT(*) FROM loja_vendedor WHERE codigo_loja = NEW.codigo_loja) >= 2;
 END;
 
 -- Trigger: Garante que vendedor pertence à loja da venda
@@ -418,15 +428,11 @@ INSERT OR IGNORE INTO vendedores (codigo_vendedor, nome_vendedor, email, telefon
 ('V006', 'Thiago Costa', 'thiago.costa@empresa.com', '(31) 99999-6666'),
 ('V007', 'Mackenzie Nogueira', 'mackenzie.nogueira@empresa.com', '(21) 99999-7777');
 
--- Inserir relações loja-vendedor
+-- Inserir relações loja-vendedor (apenas 1 por loja inicialmente para não finalizar)
 INSERT OR IGNORE INTO loja_vendedor (codigo_loja, codigo_vendedor) VALUES
 ('L001', 'V001'),
-('L001', 'V002'),
 ('L002', 'V003'),
-('L002', 'V004'),
-('L002', 'V007'),
-('L003', 'V005'),
-('L003', 'V006');
+('L003', 'V005');
 
 -- Inserir usuários do sistema
 INSERT OR IGNORE INTO usuarios (login, password, role, nome, loja, permissions) VALUES

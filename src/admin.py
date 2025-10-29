@@ -3,7 +3,7 @@ import argparse
 import os
 import logging
 
-DB = os.path.join('data', 'db', 'vendas.db')
+DB = os.path.join(os.path.dirname(__file__), '..', 'data', 'db', 'vendas.db')
 logger = logging.getLogger(__name__)
 
 

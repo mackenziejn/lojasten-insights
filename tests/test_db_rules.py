@@ -55,15 +55,15 @@ def test_sale_requires_assigned_seller(tmp_path):
     # product
     cur.execute("INSERT INTO produtos(codigo_produto, nome_produto, valor_produto) VALUES ('P1','Produto 1', 10.0)")
 
-    # attempt to insert a sale where vendedor V2 is not assigned to L1 -> fail
-    with pytest.raises(sqlite3.DatabaseError) as exc:
-        cur.execute("INSERT INTO vendas(id_cliente,nome_cliente,data_nascimento,cpf,codigo_produto,quantidade,data_venda,data_compra,codigo_loja,codigo_vendedor) VALUES (1,'C','1990-01-01','0001','P1',1,'2025-09-25','2025-09-25','L1','V2')")
-    assert 'Vendedor não está atribuído à loja informada' in str(exc.value)
-
     # insert a valid sale with V1 -> should succeed
-    cur.execute("INSERT INTO vendas(id_cliente,nome_cliente,data_nascimento,cpf,codigo_produto,quantidade,data_venda,data_compra,codigo_loja,codigo_vendedor) VALUES (2,'C2','1990-01-01','0002','P1',1,'2025-09-25','2025-09-25','L1','V1')")
+    cur.execute("INSERT INTO vendas(id_cliente,nome_cliente,data_nascimento,cpf,codigo_produto,quantidade,data_venda,data_compra,codigo_loja,codigo_vendedor,valor_produto) VALUES (2,'C2','1990-01-01','0002','P1',1,'2025-09-25','2025-09-25','L1','V1',10.0)")
     cur.execute("SELECT COUNT(*) FROM vendas WHERE codigo_loja='L1' AND codigo_vendedor='V1'")
     assert cur.fetchone()[0] == 1
+
+    # attempt to insert a sale where vendedor V2 is not assigned to L1 -> fail
+    with pytest.raises(sqlite3.DatabaseError) as exc:
+        cur.execute("INSERT INTO vendas(id_cliente,nome_cliente,data_nascimento,cpf,codigo_produto,quantidade,data_venda,data_compra,codigo_loja,codigo_vendedor,valor_produto) VALUES (1,'C','1990-01-01','0001','P1',1,'2025-09-25','2025-09-25','L1','V2',10.0)")
+    assert 'Vendedor não está atribuído à loja informada' in str(exc.value)
 
     conn.close()
 

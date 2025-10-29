@@ -26,7 +26,7 @@ from logging.handlers import RotatingFileHandler
 # ----------------------------
 # Logging: rotating file handler (batch) + console
 # ----------------------------
-LOG_DIR = os.path.join('data', 'logs')
+LOG_DIR = os.path.join(os.path.dirname(__file__), 'data', 'logs')
 os.makedirs(LOG_DIR, exist_ok=True)
 batch_log = os.path.join(LOG_DIR, 'batch.log')
 web_log = os.path.join(LOG_DIR, 'web.log')
