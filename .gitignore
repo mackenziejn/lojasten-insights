@@ -38,3 +38,6 @@ Thumbs.db
 
 # Scripts temporários
 scripts/remove_tracked_venvs.sh
+data/db/
+data/reports/
+data/users.json
