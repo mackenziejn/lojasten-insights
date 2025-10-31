@@ -5,6 +5,11 @@ try:
     HAS_PSYCOPG2 = True
 except ImportError:
     HAS_PSYCOPG2 = False
+try:
+    from supabase import create_client
+    HAS_SUPABASE = True
+except ImportError:
+    HAS_SUPABASE = False
 import os
 import pandas as pd
 import logging
@@ -16,6 +21,10 @@ import streamlit as st
 # Configurar logger
 logger = logging.getLogger('app')
 
+# Supabase credentials (hardcoded from app.py)
+SUPABASE_URL = "https://azczqeoyncpgqtxgdazp.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6Y3pxZW95bmNwZ3F0eGdkYXpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE1OTUyODAsImV4cCI6MjA3NzE3MTI4MH0.D7eTGjp8z6GCKOuWdgV1gW0dqZ8wEzu4U8LyGSV6swE"
+
 # Paths
 DUPLICATE_LOG = os.path.join("data", "reports", "duplicates.log")
 DUPLICATE_CSV = os.path.join("data", "reports", "duplicates.csv")
@@ -23,25 +32,18 @@ DB_PATH = os.path.join("data", "db", "vendas.db")
 
 def get_db_connection():
     """
-    Retorna conexão com o banco - prioriza PostgreSQL (Supabase), fallback para SQLite
+    Retorna conexão com o banco - prioriza Supabase PostgreSQL, fallback para SQLite
     """
-    # Tentar PostgreSQL (Supabase) primeiro
-    if HAS_PSYCOPG2:
+    # Tentar Supabase primeiro
+    if HAS_SUPABASE:
         try:
-            # Verificar se temos as credenciais do banco na estrutura correta
-            if "database" in st.secrets and all(key in st.secrets["database"] for key in ["host", "database", "user", "password", "port"]):
-                db_config = st.secrets["database"]
-                conn = psycopg2.connect(
-                    host=db_config["host"],
-                    database=db_config["database"],
-                    user=db_config["user"],
-                    password=db_config["password"],
-                    port=db_config["port"]
-                )
-                logger.info("✅ Conectado ao PostgreSQL (Supabase)")
-                return conn, 'postgresql'
+            supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+            # Test connection by trying to get a simple response
+            test_response = supabase.table('usuarios').select('*').limit(1).execute()
+            logger.info("✅ Conectado ao Supabase PostgreSQL")
+            return supabase, 'supabase'
         except Exception as e:
-            logger.warning(f"⚠️ PostgreSQL não disponível: {e}")
+            logger.warning(f"⚠️ Supabase não disponível: {e}")
 
     # Fallback para SQLite
     try:
@@ -166,7 +168,7 @@ def criar_tabela(schema_path=None):
                 loja TEXT NOT NULL,
                 codigo_vendedor TEXT,
                 permissions TEXT NOT NULL,
-                ativo INTEGER DEFAULT 1
+                ativo BOOLEAN DEFAULT true
             );
             """
         else:
@@ -467,15 +469,26 @@ def fechar(conn):
         conn.close()
 
 def buscar_vendas(limit=None):
-    """Retorna todas as vendas - compatível com ambos os bancos"""
+    """Retorna todas as vendas - compatível com Supabase e SQLite"""
     try:
         conn, db_type = get_db_connection()
-        query = "SELECT v.* FROM vendas v ORDER BY v.data_venda DESC"
-        if limit:
-            query += f" LIMIT {limit}"
-        
-        df = pd.read_sql_query(query, conn)
-        conn.close()
+
+        if db_type == 'supabase':
+            # Supabase query
+            query = conn.table('vendas').select('*').order('data_venda', desc=True)
+            if limit:
+                query = query.limit(limit)
+            response = query.execute()
+            df = pd.DataFrame(response.data)
+        else:
+            # SQLite query
+            query = "SELECT v.* FROM vendas v ORDER BY v.data_venda DESC"
+            if limit:
+                query += f" LIMIT {limit}"
+
+            df = pd.read_sql_query(query, conn)
+            conn.close()
+
         logger.info(f'📊 {len(df)} vendas carregadas do banco ({db_type})')
         return df
     except Exception as e:
@@ -486,8 +499,16 @@ def buscar_produtos():
     """Retorna todos os produtos"""
     try:
         conn, db_type = get_db_connection()
-        df = pd.read_sql_query("SELECT * FROM produtos ORDER BY nome_produto", conn)
-        conn.close()
+
+        if db_type == 'supabase':
+            # Supabase query
+            response = conn.table('produtos').select('*').order('nome_produto').execute()
+            df = pd.DataFrame(response.data)
+        else:
+            # SQLite query
+            df = pd.read_sql_query("SELECT * FROM produtos ORDER BY nome_produto", conn)
+            conn.close()
+
         return df
     except Exception as e:
         logger.error(f'Erro ao buscar produtos: {e}')
@@ -497,8 +518,16 @@ def buscar_lojas():
     """Retorna todas as lojas"""
     try:
         conn, db_type = get_db_connection()
-        df = pd.read_sql_query("SELECT * FROM lojas ORDER BY nome_loja", conn)
-        conn.close()
+
+        if db_type == 'supabase':
+            # Supabase query
+            response = conn.table('lojas').select('*').order('nome_loja').execute()
+            df = pd.DataFrame(response.data)
+        else:
+            # SQLite query
+            df = pd.read_sql_query("SELECT * FROM lojas ORDER BY nome_loja", conn)
+            conn.close()
+
         return df
     except Exception as e:
         logger.error(f'Erro ao buscar lojas: {e}')
@@ -508,8 +537,16 @@ def buscar_vendedores():
     """Retorna todos os vendedores"""
     try:
         conn, db_type = get_db_connection()
-        df = pd.read_sql_query("SELECT * FROM vendedores ORDER BY nome_vendedor", conn)
-        conn.close()
+
+        if db_type == 'supabase':
+            # Supabase query
+            response = conn.table('vendedores').select('*').order('nome_vendedor').execute()
+            df = pd.DataFrame(response.data)
+        else:
+            # SQLite query
+            df = pd.read_sql_query("SELECT * FROM vendedores ORDER BY nome_vendedor", conn)
+            conn.close()
+
         return df
     except Exception as e:
         logger.error(f'Erro ao buscar vendedores: {e}')
@@ -519,33 +556,46 @@ def carregar_usuarios():
     """Carrega usuários do banco de dados"""
     try:
         conn, db_type = get_db_connection()
-        cursor = conn.cursor()
-        
-        if db_type == 'postgresql':
-            cursor.execute("SELECT login, password, role, nome, loja, codigo_vendedor, permissions, ativo FROM usuarios")
+
+        if db_type == 'supabase':
+            # Supabase query - get all users and filter in Python
+            response = conn.table('usuarios').select('*').execute()
+            rows = [row for row in response.data if row.get('ativo', True)]
         else:
-            cursor.execute("SELECT login, password, role, nome, loja, codigo_vendedor, permissions, ativo FROM usuarios")
-        
-        try:
-            rows = cursor.fetchall()
-        except Exception as e:
-            if "no such column: ativo" in str(e):
-                # Fallback query without ativo column
-                if db_type == 'postgresql':
-                    cursor.execute("SELECT login, password, role, nome, loja, codigo_vendedor, permissions FROM usuarios")
-                else:
-                    cursor.execute("SELECT login, password, role, nome, loja, codigo_vendedor, permissions FROM usuarios")
+            # SQLite query
+            cursor = conn.cursor()
+            cursor.execute("SELECT login, password, role, nome, loja, codigo_vendedor, permissions, ativo FROM usuarios WHERE ativo = 1")
+
+            try:
                 rows = cursor.fetchall()
-                # Add default ativo value
-                rows = [row + (1,) for row in rows]
-            else:
-                raise
-        
-        conn.close()
+            except Exception as e:
+                if "no such column: ativo" in str(e):
+                    # Fallback query without ativo column
+                    cursor.execute("SELECT login, password, role, nome, loja, codigo_vendedor, permissions FROM usuarios")
+                    rows = cursor.fetchall()
+                    # Add default ativo value
+                    rows = [row + (1,) for row in rows]
+                else:
+                    raise
+
+            conn.close()
 
         usuarios = {}
         for row in rows:
-            login, password, role, nome, loja, codigo_vendedor, permissions_str, ativo = row
+            if db_type == 'supabase':
+                # Supabase returns dict
+                login = row['login']
+                password = row['password']
+                role = row['role']
+                nome = row['nome']
+                loja = row['loja']
+                codigo_vendedor = row.get('codigo_vendedor')
+                permissions_str = row['permissions']
+                ativo = row.get('ativo', True)
+            else:
+                # SQLite returns tuple
+                login, password, role, nome, loja, codigo_vendedor, permissions_str, ativo = row
+
             try:
                 permissions = json.loads(permissions_str)
             except:
@@ -580,39 +630,38 @@ def salvar_usuario(login, password, role, nome, loja, permissions, codigo_vended
     try:
         permissions_str = json.dumps(permissions)
         conn, db_type = get_db_connection()
-        cursor = conn.cursor()
 
-        # Se codigo_vendedor é fornecido, garantir que existe
-        if codigo_vendedor:
-            if db_type == 'postgresql':
-                cursor.execute("INSERT INTO vendedores(codigo_vendedor, nome_vendedor) VALUES (%s,%s) ON CONFLICT (codigo_vendedor) DO NOTHING",
-                            (codigo_vendedor, nome))
-            else:
+        if db_type == 'supabase':
+            # Supabase upsert
+            data = {
+                'login': login,
+                'password': password,
+                'role': role,
+                'nome': nome,
+                'loja': loja,
+                'codigo_vendedor': codigo_vendedor,
+                'permissions': permissions_str,
+                'ativo': ativo
+            }
+            response = conn.table('usuarios').upsert(data).execute()
+        else:
+            # SQLite
+            cursor = conn.cursor()
+
+            # Se codigo_vendedor é fornecido, garantir que existe
+            if codigo_vendedor:
                 cursor.execute("INSERT OR IGNORE INTO vendedores(codigo_vendedor, nome_vendedor) VALUES (?,?)",
                             (codigo_vendedor, nome))
 
-        # Inserir ou atualizar usuário
-        if db_type == 'postgresql':
-            cursor.execute("""
-                INSERT INTO usuarios (login, password, role, nome, loja, codigo_vendedor, permissions, ativo)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (login) DO UPDATE SET
-                password = EXCLUDED.password,
-                role = EXCLUDED.role,
-                nome = EXCLUDED.nome,
-                loja = EXCLUDED.loja,
-                codigo_vendedor = EXCLUDED.codigo_vendedor,
-                permissions = EXCLUDED.permissions,
-                ativo = EXCLUDED.ativo
-            """, (login, password, role, nome, loja, codigo_vendedor, permissions_str, ativo))
-        else:
+            # Inserir ou atualizar usuário
             cursor.execute("""
                 INSERT OR REPLACE INTO usuarios (login, password, role, nome, loja, codigo_vendedor, permissions, ativo)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (login, password, role, nome, loja, codigo_vendedor, permissions_str, ativo))
+            """, (login, password, role, nome, loja, codigo_vendedor, permissions_str, 1 if ativo else 0))
 
-        conn.commit()
-        conn.close()
+            conn.commit()
+            conn.close()
+
         logger.info(f'✅ Usuário {login} salvo/atualizado')
         return True
 
@@ -624,13 +673,17 @@ def deletar_usuario(login):
     """Deleta um usuário do banco"""
     try:
         conn, db_type = get_db_connection()
-        cursor = conn.cursor()
-        if db_type == 'postgresql':
-            cursor.execute("DELETE FROM usuarios WHERE login = %s", (login,))
+
+        if db_type == 'supabase':
+            # Supabase delete
+            response = conn.table('usuarios').delete().eq('login', login).execute()
         else:
+            # SQLite delete
+            cursor = conn.cursor()
             cursor.execute("DELETE FROM usuarios WHERE login = ?", (login,))
-        conn.commit()
-        conn.close()
+            conn.commit()
+            conn.close()
+
         logger.info(f'✅ Usuário {login} deletado')
         return True
     except Exception as e:
@@ -678,37 +731,40 @@ def verificar_estado_banco():
     """Verifica o estado atual do banco e retorna estatísticas"""
     try:
         conn, db_type = get_db_connection()
-        cursor = conn.cursor()
-        
-        if db_type == 'postgresql':
-            cursor.execute("""
-                SELECT table_name 
-                FROM information_schema.tables 
-                WHERE table_schema = 'public'
-            """)
+
+        if db_type == 'supabase':
+            # Supabase - get table counts
+            tabelas = ['vendas', 'produtos', 'lojas', 'vendedores', 'usuarios', 'loja_vendedor']
+            estatisticas = {}
+
+            for table_name in tabelas:
+                try:
+                    response = conn.table(table_name).select('*', count='exact').execute()
+                    estatisticas[table_name] = response.count
+                except Exception as e:
+                    logger.debug(f"Erro ao contar {table_name}: {e}")
+                    estatisticas[table_name] = 0
         else:
+            # SQLite
+            cursor = conn.cursor()
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
-        
-        tabelas = cursor.fetchall()
-        
-        estatisticas = {}
-        for tabela in tabelas:
-            table_name = tabela[0]
-            if db_type == 'postgresql':
+            tabelas = cursor.fetchall()
+
+            estatisticas = {}
+            for tabela in tabelas:
+                table_name = tabela[0]
                 cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
-            else:
-                cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
-            count = cursor.fetchone()[0]
-            estatisticas[table_name] = count
-        
-        conn.close()
-        
+                count = cursor.fetchone()[0]
+                estatisticas[table_name] = count
+
+            conn.close()
+
         logger.info("📊 Estatísticas do banco:")
         for tabela, count in estatisticas.items():
             logger.info(f"   - {tabela}: {count} registros")
-        
+
         return estatisticas
-        
+
     except Exception as e:
         logger.error(f'Erro ao verificar estado do banco: {e}')
         return {}

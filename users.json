@@ -1,114 +1,164 @@
 {
-    "admin": {
-        "password": "senha123",
-        "role": "admin",
-        "nome": "administrador",
-        "loja": "Todas",
-        "permissions": {
-            "ver_filtros": true,
-            "ver_indicadores": true,
-            "ver_graficos": true,
-            "executar_pipeline": true,
-            "analisar_todas_lojas": true,
-            "upload_csv": true
-        }
+  "admin": {
+    "password": "senha123",
+    "role": "admin",
+    "nome": "Administrador",
+    "loja": "Todas lojas",
+    "permissions": {
+      "ver_filtros": true,
+      "ver_indicadores": true,
+      "ver_graficos": true,
+      "executar_pipeline": true,
+      "analisar_todas_lojas": true,
+      "upload_csv": true
     },
-    "csilva": {
-        "password": "csilva1976",
-        "role": "user",
-        "nome": "Carlos Silva",
-        "loja": "Loja Centro",
-        "permissions": {
-            "ver_filtros": false,
-            "ver_indicadores": true,
-            "ver_graficos": true,
-            "executar_pipeline": false,
-            "analisar_todas_lojas": false,
-            "upload_csv": false
-        }
+    "ativo": true,
+    "codigo_vendedor": null,
+    "email": "",
+    "ultimo_login": null
+  },
+  "antonios": {
+    "password": "antonios1977",
+    "role": "manager",
+    "nome": "Antonio Santos",
+    "loja": "Loja Shopping",
+    "permissions": {
+      "ver_filtros": true,
+      "ver_indicadores": true,
+      "ver_graficos": true,
+      "executar_pipeline": true,
+      "analisar_todas_lojas": false,
+      "upload_csv": false
     },
-    "maoliveira": {
-        "password": "maoliveira1980",
-        "role": "user",
-        "nome": "Maria Oliveira",
-        "loja": "Loja Centro",
-        "permissions": {
-            "ver_filtros": false,
-            "ver_indicadores": true,
-            "ver_graficos": true,
-            "executar_pipeline": false,
-            "analisar_todas_lojas": false,
-            "upload_csv": false
-        }
+    "ativo": true,
+    "codigo_vendedor": "V004",
+    "email": "",
+    "ultimo_login": null
+  },
+  "baronem": {
+    "password": "baronem1990",
+    "role": "manager",
+    "nome": "Barone Mendes",
+    "loja": "Loja Bairro",
+    "permissions": {
+      "ver_filtros": true,
+      "ver_indicadores": true,
+      "ver_graficos": true,
+      "executar_pipeline": true,
+      "analisar_todas_lojas": false,
+      "upload_csv": false
     },
-    "josouza": {
-        "password": "josouza1986",
-        "role": "user",
-        "nome": "Joao Souza",
-        "loja": "Loja Shopping",
-        "permissions": {
-            "ver_filtros": false,
-            "ver_indicadores": true,
-            "ver_graficos": true,
-            "executar_pipeline": false,
-            "analisar_todas_lojas": false,
-            "upload_csv": false
-        }
+    "ativo": true,
+    "codigo_vendedor": "V005",
+    "email": "",
+    "ultimo_login": null
+  },
+  "csilva": {
+    "password": "csilva1976",
+    "role": "manager",
+    "nome": "Carlos Silva",
+    "loja": "Loja Centro",
+    "permissions": {
+      "ver_filtros": true,
+      "ver_indicadores": true,
+      "ver_graficos": true,
+      "executar_pipeline": true,
+      "analisar_todas_lojas": false,
+      "upload_csv": false
     },
-    "antonios": {
-        "password": "antonios1977",
-        "role": "user",
-        "nome": "Antonio Souza",
-        "loja": "Loja Shopping",
-        "permissions": {
-            "ver_filtros": false,
-            "ver_indicadores": true,
-            "ver_graficos": true,
-            "executar_pipeline": false,
-            "analisar_todas_lojas": false,
-            "upload_csv": false
-        }
+    "ativo": true,
+    "codigo_vendedor": "V001",
+    "email": "",
+    "ultimo_login": null
+  },
+  "josouza": {
+    "password": "josouza1986",
+    "role": "user",
+    "nome": "Jo\u00e3o Souza",
+    "loja": "Loja Shopping",
+    "permissions": {
+      "ver_filtros": true,
+      "ver_indicadores": true,
+      "ver_graficos": true,
+      "executar_pipeline": false,
+      "analisar_todas_lojas": false,
+      "upload_csv": true
     },
-    "baronem": {
-        "password": "baronem1990",
-        "role": "user",
-        "nome": "Barone Mendes",
-        "loja": "Loja Bairro",
-        "permissions": {
-            "ver_filtros": false,
-            "ver_indicadores": true,
-            "ver_graficos": true,
-            "executar_pipeline": false,
-            "analisar_todas_lojas": false,
-            "upload_csv": false
-        }
+    "ativo": true,
+    "codigo_vendedor": null,
+    "email": "",
+    "ultimo_login": null
+  },
+  "maoliveira": {
+    "password": "maoliveira1980",
+    "role": "user",
+    "nome": "Maria Oliveira",
+    "loja": "Loja Centro",
+    "permissions": {
+      "ver_filtros": true,
+      "ver_indicadores": true,
+      "ver_graficos": true,
+      "executar_pipeline": false,
+      "analisar_todas_lojas": false,
+      "upload_csv": true
     },
-    "thiagoc": {
-        "password": "thiagoc123",
-        "role": "user",
-        "nome": "Thiago Curse",
-        "loja": "Loja Bairro",
-        "permissions": {
-            "ver_filtros": false,
-            "ver_indicadores": true,
-            "ver_graficos": true,
-            "executar_pipeline": false,
-            "analisar_todas_lojas": false,
-            "upload_csv": false
-        }
+    "ativo": true,
+    "codigo_vendedor": null,
+    "email": "",
+    "ultimo_login": null
+  },
+  "mnogueira": {
+    "password": "mnogueira123",
+    "role": "user",
+    "nome": "Mackenzie Nogueira",
+    "loja": "Loja Shopping",
+    "permissions": {
+      "ver_filtros": true,
+      "ver_indicadores": true,
+      "ver_graficos": true,
+      "executar_pipeline": false,
+      "analisar_todas_lojas": false,
+      "upload_csv": true
     },
-    "mnogueira": {
-        "password": "mnogueira123",
-        "role": "user",
-        "nome": "Mackenzie Nogueira",
-        "loja": "Loja Shopping",
-        "permissions": {
-            "ver_filtros": true,
-            "ver_indicadores": true,
-            "ver_graficos": true,
-            "executar_pipeline": false,
-            "analisar_todas_lojas": false,
-            "upload_csv": false
-        }
-    }
+    "ativo": true,
+    "codigo_vendedor": null,
+    "email": "",
+    "ultimo_login": null
+  },
+  "rcirne": {
+    "password": "rcirne123",
+    "role": "admin",
+    "nome": "Rafael Cirne",
+    "loja": "Todas lojas",
+    "permissions": {
+      "ver_filtros": true,
+      "ver_indicadores": true,
+      "ver_graficos": true,
+      "executar_pipeline": true,
+      "analisar_todas_lojas": true,
+      "upload_csv": true
+    },
+    "ativo": true,
+    "codigo_vendedor": null,
+    "email": "",
+    "ultimo_login": null
+  },
+  "thiagoc": {
+    "password": "thiagoc123",
+    "role": "user",
+    "nome": "Thiago Costa",
+    "loja": "Loja Bairro",
+    "permissions": {
+      "ver_filtros": true,
+      "ver_indicadores": true,
+      "ver_graficos": true,
+      "executar_pipeline": false,
+      "analisar_todas_lojas": false,
+      "upload_csv": true
+    },
+    "ativo": true,
+    "codigo_vendedor": null,
+    "email": "",
+    "ultimo_login": null
+  }
 }

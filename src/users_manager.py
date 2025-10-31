@@ -22,7 +22,7 @@ PERFIS = {
         "pode_ver_indicadores": True,
         "pode_enviar_dropbox": True
     },
-    "gerente": {
+    "manager": {
         "nome": "Gerente",
         "pode_editar_usuarios": False,
         "pode_executar_pipeline": True,
@@ -34,8 +34,8 @@ PERFIS = {
         "pode_ver_indicadores": True,
         "pode_enviar_dropbox": False
     },
-    "vendedor": {
-        "nome": "Vendedor",
+    "user": {
+        "nome": "Usuário",
         "pode_editar_usuarios": False,
         "pode_executar_pipeline": False,
         "pode_exportar_dados": False,

@@ -9,6 +9,19 @@ import logging
 import json
 from logging.handlers import RotatingFileHandler
 
+# 🔹 Configurações do Supabase (com fallback)
+SUPABASE_URL = "https://azczqeoyncpgqtxgdazp.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6Y3pxZW95bmNwZ3F0eGdkYXpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE1OTUyODAsImV4cCI6MjA3NzE3MTI4MH0.D7eTGjp8z6GCKOuWdgV1gW0dqZ8wEzu4U8LyGSV6swE"
+
+supabase = None
+try:
+    from supabase import create_client
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    st.success("✅ Conectado ao Supabase")
+except Exception as e:
+    st.warning(f"⚠️ Conexão Supabase não disponível: {e}")
+    supabase = None
+
 # 🔹 Adiciona o diretório pai de 'src' ao path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -26,22 +39,19 @@ USERS_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "user
 # Criar tabelas se necessário
 criar_tabela()
 
-# Initialize usuarios in session state - CORREÇÃO APLICADA
+# Initialize usuarios in session state
 if 'usuarios' not in st.session_state:
-    # PRIMEIRO tenta carregar do JSON
-    if os.path.exists(USERS_FILE):
-        with open(USERS_FILE) as f:
-            usuarios = json.load(f)
-        print("✅ Usuários carregados do JSON")
-    else:
-        # Fallback para banco
-        usuarios = carregar_usuarios()
-        print("✅ Usuários carregados do banco")
+    # Carregar usuários do banco
+    usuarios = carregar_usuarios()
 
-    # Se não há usuários, criar usuários padrão
+    # Se não há usuários, carregar do JSON como fallback
     if not usuarios:
-        # Criar usuários padrão se não existir
-        default_users = {
+        if os.path.exists(USERS_FILE):
+            with open(USERS_FILE) as f:
+                usuarios = json.load(f)
+        else:
+            # Criar usuários padrão se não existir
+            default_users = {
             "admin": {
                 "password": "senha123",
                 "role": "admin",
@@ -54,13 +64,29 @@ if 'usuarios' not in st.session_state:
                     "executar_pipeline": True,
                     "analisar_todas_lojas": True,
                     "upload_csv": True
-                }
+                },
+                "ativo": True
             },
-            "csilva": {
-                "password": "csilva1976",
+            "rcirne": {
+                "password": "rcirne",
+                "role": "admin",
+                "nome": "Rafael Cirne",
+                "loja": "Todas lojas",
+                "permissions": {
+                    "ver_filtros": True,
+                    "ver_indicadores": True,
+                    "ver_graficos": True,
+                    "executar_pipeline": True,
+                    "analisar_todas_lojas": True,
+                    "upload_csv": True
+                },
+                "ativo": True
+            },
+            "baronem": {
+                "password": "baronem",
                 "role": "manager",
-                "nome": "Carlos Silva",
-                "loja": "Loja Centro",
+                "nome": "Barone Mendes",
+                "loja": "Loja Bairro",
                 "permissions": {
                     "ver_filtros": True,
                     "ver_indicadores": True,
@@ -68,38 +94,11 @@ if 'usuarios' not in st.session_state:
                     "executar_pipeline": True,
                     "analisar_todas_lojas": False,
                     "upload_csv": False
-                }
-            },
-            "maoliveira": {
-                "password": "maoliveira1980",
-                "role": "user",
-                "nome": "Maria Oliveira",
-                "loja": "Loja Norte",
-                "permissions": {
-                    "ver_filtros": True,
-                    "ver_indicadores": True,
-                    "ver_graficos": True,
-                    "executar_pipeline": False,
-                    "analisar_todas_lojas": False,
-                    "upload_csv": False
-                }
-            },
-            "josouza": {
-                "password": "josouza1986",
-                "role": "user",
-                "nome": "João Souza",
-                "loja": "Loja Bairro",
-                "permissions": {
-                    "ver_filtros": True,
-                    "ver_indicadores": True,
-                    "ver_graficos": True,
-                    "executar_pipeline": False,
-                    "analisar_todas_lojas": False,
-                    "upload_csv": False
-                }
+                },
+                "ativo": True
             },
             "antonios": {
-                "password": "antonios1977",
+                "password": "antonios",
                 "role": "manager",
                 "nome": "Antonio Santos",
                 "loja": "Loja Shopping",
@@ -110,12 +109,28 @@ if 'usuarios' not in st.session_state:
                     "executar_pipeline": True,
                     "analisar_todas_lojas": False,
                     "upload_csv": False
-                }
+                },
+                "ativo": True
             },
-            "baronem": {
-                "password": "baronem1990",
+            "josouza": {
+                "password": "josouza",
                 "role": "user",
-                "nome": "Barbara Neme",
+                "nome": "João Souza",
+                "loja": "Loja Shopping",
+                "permissions": {
+                    "ver_filtros": True,
+                    "ver_indicadores": True,
+                    "ver_graficos": True,
+                    "executar_pipeline": False,
+                    "analisar_todas_lojas": False,
+                    "upload_csv": False
+                },
+                "ativo": True
+            },
+            "thiagoc": {
+                "password": "thiagoc",
+                "role": "user",
+                "nome": "Thiago Costa",
                 "loja": "Loja Bairro",
                 "permissions": {
                     "ver_filtros": True,
@@ -124,13 +139,14 @@ if 'usuarios' not in st.session_state:
                     "executar_pipeline": False,
                     "analisar_todas_lojas": False,
                     "upload_csv": False
-                }
+                },
+                "ativo": True
             },
-            "thiagoc": {
-                "password": "thiagoc123",
+            "csilva": {
+                "password": "csilva",
                 "role": "manager",
-                "nome": "Thiago Costa",
-                "loja": "Loja Shopping",
+                "nome": "Carlos Silva",
+                "loja": "Loja Centro",
                 "permissions": {
                     "ver_filtros": True,
                     "ver_indicadores": True,
@@ -138,13 +154,14 @@ if 'usuarios' not in st.session_state:
                     "executar_pipeline": True,
                     "analisar_todas_lojas": False,
                     "upload_csv": False
-                }
+                },
+                "ativo": True
             },
             "mnogueira": {
-                "password": "mnogueira123",
+                "password": "mnogueira",
                 "role": "user",
-                "nome": "Marcos Nogueira",
-                "loja": "Loja Bairro",
+                "nome": "Mackenzie Nogueira",
+                "loja": "Loja Shopping",
                 "permissions": {
                     "ver_filtros": True,
                     "ver_indicadores": True,
@@ -152,26 +169,42 @@ if 'usuarios' not in st.session_state:
                     "executar_pipeline": False,
                     "analisar_todas_lojas": False,
                     "upload_csv": False
-                }
+                },
+                "ativo": True
+            },
+            "maoliveira": {
+                "password": "maoliveira",
+                "role": "user",
+                "nome": "Maria Oliveira",
+                "loja": "Loja Centro",
+                "permissions": {
+                    "ver_filtros": True,
+                    "ver_indicadores": True,
+                    "ver_graficos": True,
+                    "executar_pipeline": False,
+                    "analisar_todas_lojas": False,
+                    "upload_csv": False
+                },
+                "ativo": True
             }
         }
 
-        with open(USERS_FILE, "w") as f:
-            json.dump(default_users, f, indent=4)
-        usuarios = default_users
+            with open(USERS_FILE, "w") as f:
+                json.dump(default_users, f, indent=4)
+            usuarios = default_users
 
-        # Salvar usuários padrão no banco se não existirem
-        for login, data in usuarios.items():
-            salvar_usuario(
-                login=login,
-                password=data["password"],
-                role=data["role"],
-                nome=data["nome"],
-                loja=data["loja"],
-                permissions=data["permissions"],
-                codigo_vendedor=data.get("codigo_vendedor"),
-                ativo=data.get("ativo", True)
-            )
+            # Salvar usuários padrão no banco se não existirem
+            for login, data in usuarios.items():
+                salvar_usuario(
+                    login=login,
+                    password=data["password"],
+                    role=data["role"],
+                    nome=data["nome"],
+                    loja=data["loja"],
+                    permissions=data["permissions"],
+                    codigo_vendedor=data.get("codigo_vendedor"),
+                    ativo=data.get("ativo", True)
+                )
 
     # Ensure all default users are in DB (with lowercase logins)
     default_users = {
@@ -187,13 +220,29 @@ if 'usuarios' not in st.session_state:
                 "executar_pipeline": True,
                 "analisar_todas_lojas": True,
                 "upload_csv": True
-            }
+            },
+            "ativo": True
         },
-        "csilva": {
-            "password": "csilva1976",
+        "rcirne": {
+            "password": "rcirne",
+            "role": "admin",
+            "nome": "Rafael Cirne",
+            "loja": "Todas lojas",
+            "permissions": {
+                "ver_filtros": True,
+                "ver_indicadores": True,
+                "ver_graficos": True,
+                "executar_pipeline": True,
+                "analisar_todas_lojas": True,
+                "upload_csv": True
+            },
+            "ativo": True
+        },
+        "baronem": {
+            "password": "baronem",
             "role": "manager",
-            "nome": "Carlos Silva",
-            "loja": "Loja Centro",
+            "nome": "Barone Mendes",
+            "loja": "Loja Bairro",
             "permissions": {
                 "ver_filtros": True,
                 "ver_indicadores": True,
@@ -201,38 +250,11 @@ if 'usuarios' not in st.session_state:
                 "executar_pipeline": True,
                 "analisar_todas_lojas": False,
                 "upload_csv": False
-            }
-        },
-        "maoliveira": {
-            "password": "maoliveira1980",
-            "role": "user",
-            "nome": "Maria Oliveira",
-            "loja": "Loja Norte",
-            "permissions": {
-                "ver_filtros": True,
-                "ver_indicadores": True,
-                "ver_graficos": True,
-                "executar_pipeline": False,
-                "analisar_todas_lojas": False,
-                "upload_csv": False
-            }
-        },
-        "josouza": {
-            "password": "josouza1986",
-            "role": "user",
-            "nome": "João Souza",
-            "loja": "Loja Bairro",
-            "permissions": {
-                "ver_filtros": True,
-                "ver_indicadores": True,
-                "ver_graficos": True,
-                "executar_pipeline": False,
-                "analisar_todas_lojas": False,
-                "upload_csv": False
-            }
+            },
+            "ativo": True
         },
         "antonios": {
-            "password": "antonios1977",
+            "password": "antonios",
             "role": "manager",
             "nome": "Antonio Santos",
             "loja": "Loja Shopping",
@@ -243,12 +265,28 @@ if 'usuarios' not in st.session_state:
                 "executar_pipeline": True,
                 "analisar_todas_lojas": False,
                 "upload_csv": False
-            }
+            },
+            "ativo": True
         },
-        "baronem": {
-            "password": "baronem1990",
+        "josouza": {
+            "password": "josouza",
             "role": "user",
-            "nome": "Barbara Neme",
+            "nome": "João Souza",
+            "loja": "Loja Shopping",
+            "permissions": {
+                "ver_filtros": True,
+                "ver_indicadores": True,
+                "ver_graficos": True,
+                "executar_pipeline": False,
+                "analisar_todas_lojas": False,
+                "upload_csv": False
+            },
+            "ativo": True
+        },
+        "thiagoc": {
+            "password": "thiagoc",
+            "role": "user",
+            "nome": "Thiago Costa",
             "loja": "Loja Bairro",
             "permissions": {
                 "ver_filtros": True,
@@ -257,13 +295,14 @@ if 'usuarios' not in st.session_state:
                 "executar_pipeline": False,
                 "analisar_todas_lojas": False,
                 "upload_csv": False
-            }
+            },
+            "ativo": True
         },
-        "thiagoc": {
-            "password": "thiagoc123",
+        "csilva": {
+            "password": "csilva",
             "role": "manager",
-            "nome": "Thiago Costa",
-            "loja": "Loja Shopping",
+            "nome": "Carlos Silva",
+            "loja": "Loja Centro",
             "permissions": {
                 "ver_filtros": True,
                 "ver_indicadores": True,
@@ -271,13 +310,14 @@ if 'usuarios' not in st.session_state:
                 "executar_pipeline": True,
                 "analisar_todas_lojas": False,
                 "upload_csv": False
-            }
+            },
+            "ativo": True
         },
         "mnogueira": {
-            "password": "mnogueira123",
+            "password": "mnogueira",
             "role": "user",
-            "nome": "Marcos Nogueira",
-            "loja": "Loja Bairro",
+            "nome": "Mackenzie Nogueira",
+            "loja": "Loja Shopping",
             "permissions": {
                 "ver_filtros": True,
                 "ver_indicadores": True,
@@ -285,7 +325,23 @@ if 'usuarios' not in st.session_state:
                 "executar_pipeline": False,
                 "analisar_todas_lojas": False,
                 "upload_csv": False
-            }
+            },
+            "ativo": True
+        },
+        "maoliveira": {
+            "password": "maoliveira",
+            "role": "user",
+            "nome": "Maria Oliveira",
+            "loja": "Loja Centro",
+            "permissions": {
+                "ver_filtros": True,
+                "ver_indicadores": True,
+                "ver_graficos": True,
+                "executar_pipeline": False,
+                "analisar_todas_lojas": False,
+                "upload_csv": False
+            },
+            "ativo": True
         }
     }
 
@@ -308,7 +364,9 @@ if 'usuarios' not in st.session_state:
 else:
     usuarios = st.session_state['usuarios']
 
-# Initialize session state for form fields
+# Initialize session state for permissions and form fields
+if 'permissions' not in st.session_state:
+    st.session_state.permissions = {}
 if 'novo_login' not in st.session_state:
     st.session_state.novo_login = ''
 if 'novo_nome' not in st.session_state:
@@ -425,33 +483,22 @@ if not st.session_state.autenticado:
         usuario = st.text_input("Usuário", key="usuario_input")
         senha = st.text_input("Senha", type="password", key="senha_input")
         if st.button("Entrar"):
-            # CORREÇÃO APLICADA: Debug detalhado do login
             usuario_lower = usuario.lower()
-            print(f"🔐 Tentativa login: {usuario_lower}")
-            print(f"🔐 Usuários disponíveis: {list(usuarios.keys())}")
-            
-            if usuario_lower in usuarios:
-                print(f"✅ Usuário encontrado: {usuario_lower}")
-                print(f"🔑 Senha esperada: {usuarios[usuario_lower]['password']}")
-                print(f"🔑 Senha fornecida: {senha}")
-                
-                if senha == usuarios[usuario_lower]["password"]:
-                    # Verificar se usuário está ativo
-                    if not usuarios[usuario_lower].get("ativo", True):
-                        st.error("❌ Conta desativada. Entre em contato com o administrador.")
-                        st.stop()
+            if usuario_lower in usuarios and senha == usuarios[usuario_lower]["password"]:
+                # Verificar se usuário está ativo
+                if not usuarios[usuario_lower].get("ativo", True):
+                    st.error("❌ Conta desativada. Entre em contato com o administrador.")
+                    st.stop()
 
-                    st.session_state.autenticado = True
-                    st.session_state.usuario = usuario_lower
-                    st.session_state.role = usuarios[usuario_lower]["role"]
-                    st.session_state.permissions = usuarios[usuario_lower]["permissions"]
-                    st.session_state.nome_usuario = usuarios[usuario_lower]["nome"]
-                    st.session_state.loja_usuario = usuarios[usuario_lower]["loja"]
-                    st.session_state.codigo_vendedor = usuarios[usuario_lower].get("codigo_vendedor")
-                    st.success("✅ Autenticado com sucesso!")
-                    st.rerun()
-                else:
-                    st.error("❌ Senha incorreta.")
+                st.session_state.autenticado = True
+                st.session_state.usuario = usuario_lower
+                st.session_state.role = usuarios[usuario_lower]["role"]
+                st.session_state.permissions = usuarios[usuario_lower]["permissions"]
+                st.session_state.nome_usuario = usuarios[usuario_lower]["nome"]
+                st.session_state.loja_usuario = usuarios[usuario_lower]["loja"]
+                st.session_state.codigo_vendedor = usuarios[usuario_lower].get("codigo_vendedor")
+                st.success("✅ Autenticado com sucesso!")
+                st.rerun()
             else:
                 st.error("❌ Credenciais inválidas.")
                 st.stop()

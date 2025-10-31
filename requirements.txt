@@ -15,3 +15,7 @@ altair
 reportlab
 pillow
 unidecode
+dropbox
+psycopg2-binary
+psycopg2-binary
+supabase
