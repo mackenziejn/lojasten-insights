@@ -81,14 +81,18 @@ def criar_tabela(schema_path=None):
     Ensure database and tables exist - compatível com PostgreSQL e SQLite
     """
     conn, db_type = get_db_connection()
-    
+
     try:
         # Verificar se tabelas já existem
-        if db_type == 'postgresql':
+        if db_type == 'supabase':
+            # For Supabase, assume tables exist if we can connect
+            logger.info('✅ Supabase conectado - assumindo tabelas existem')
+            return True
+        elif db_type == 'postgresql':
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT table_name 
-                FROM information_schema.tables 
+                SELECT table_name
+                FROM information_schema.tables
                 WHERE table_schema = 'public'
             """)
             tabelas_existentes = [row[0] for row in cursor.fetchall()]
@@ -96,11 +100,12 @@ def criar_tabela(schema_path=None):
             cursor = conn.cursor()
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
             tabelas_existentes = [row[0] for row in cursor.fetchall()]
-        
+
         # Se já existem tabelas, não recriar
         if tabelas_existentes:
             logger.info(f'✅ Banco já contém {len(tabelas_existentes)} tabelas')
-            conn.close()
+            if db_type != 'supabase':
+                conn.close()
             return True
             
         # Criar tabelas (schema básico para ambos)
