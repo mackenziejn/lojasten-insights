@@ -9,9 +9,22 @@ import logging
 import json
 from logging.handlers import RotatingFileHandler
 
-# 🔹 Configurações do Supabase (com fallback)
-SUPABASE_URL = os.environ.get("SUPABASE_URL") or st.secrets.get("supabase", {}).get("url")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY") or st.secrets.get("supabase", {}).get("key")
+# 🔹 Configurações do Supabase (com fallback para Streamlit Cloud)
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+
+# Fallback para Streamlit Cloud secrets
+if not SUPABASE_URL:
+    try:
+        SUPABASE_URL = st.secrets["supabase"]["url"]
+    except (KeyError, TypeError):
+        SUPABASE_URL = None
+
+if not SUPABASE_KEY:
+    try:
+        SUPABASE_KEY = st.secrets["supabase"]["key"]
+    except (KeyError, TypeError):
+        SUPABASE_KEY = None
 
 supabase = None
 try:
@@ -20,7 +33,7 @@ try:
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
         st.success("✅ Conectado ao Supabase")
     else:
-        st.warning("⚠️ Conexão Supabase não disponível: supabase_url is required")
+        st.warning("⚠️ Conexão Supabase não disponível: credenciais não encontradas")
         supabase = None
 except Exception as e:
     st.warning(f"⚠️ Conexão Supabase não disponível: {e}")
