@@ -10,14 +10,18 @@ import json
 from logging.handlers import RotatingFileHandler
 
 # 🔹 Configurações do Supabase (com fallback)
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+SUPABASE_URL = os.environ.get("SUPABASE_URL") or st.secrets.get("supabase", {}).get("url")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY") or st.secrets.get("supabase", {}).get("key")
 
 supabase = None
 try:
     from supabase import create_client
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-    st.success("✅ Conectado ao Supabase")
+    if SUPABASE_URL and SUPABASE_KEY:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        st.success("✅ Conectado ao Supabase")
+    else:
+        st.warning("⚠️ Conexão Supabase não disponível: supabase_url is required")
+        supabase = None
 except Exception as e:
     st.warning(f"⚠️ Conexão Supabase não disponível: {e}")
     supabase = None
