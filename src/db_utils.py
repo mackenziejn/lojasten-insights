@@ -21,9 +21,9 @@ import streamlit as st
 # Configurar logger
 logger = logging.getLogger('app')
 
-# Supabase credentials (hardcoded from app.py)
-SUPABASE_URL = "https://azczqeoyncpgqtxgdazp.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6Y3pxZW95bmNwZ3F0eGdkYXpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE1OTUyODAsImV4cCI6MjA3NzE3MTI4MH0.D7eTGjp8z6GCKOuWdgV1gW0dqZ8wEzu4U8LyGSV6swE"
+# Supabase credentials from environment variables
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
 # Paths
 DUPLICATE_LOG = os.path.join("data", "reports", "duplicates.log")
@@ -266,7 +266,7 @@ def inserir_linha(dados):
     Versão robusta com tratamento de erros para PostgreSQL e SQLite
     """
     conn, db_type = get_db_connection()
-    
+
     try:
         # Parâmetros esperados pelo pipeline.py
         expected_params = [
@@ -314,46 +314,59 @@ def inserir_linha(dados):
                     logger.debug(f'Erro ao verificar CPF duplicado: {e}')
 
         # Inserir venda
-        cursor = conn.cursor()
-        if db_type == 'postgresql':
-            cursor.execute("""
-                INSERT INTO vendas (
-                    id_cliente, nome_cliente, data_nascimento, rg, cpf, endereco, numero, complemento, 
-                    bairro, cidade, estado, cep, telefone, codigo_produto, quantidade, data_venda, 
-                    data_compra, forma_pagamento, codigo_loja, nome_vendedor, codigo_vendedor
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (
-                params['id_cliente'], params['nome_cliente'], params['data_nascimento'], params['rg'], 
-                params['cpf'], params['endereco'], params['numero'], params['complemento'], 
-                params['bairro'], params['cidade'], params['estado'], params['cep'], params['telefone'], 
-                params['codigo_produto'], params['quantidade'], params['data_venda'], params['data_compra'], 
-                params['forma_pagamento'], params['codigo_loja'], params.get('nome_vendedor', ''), 
-                params['codigo_vendedor']
-            ))
+        if db_type == 'supabase':
+            # Supabase insert
+            data = {
+                'id_cliente': params['id_cliente'],
+                'nome_cliente': params['nome_cliente'],
+                'data_nascimento': params['data_nascimento'],
+                'rg': params['rg'],
+                'cpf': params['cpf'],
+                'endereco': params['endereco'],
+                'numero': params['numero'],
+                'complemento': params['complemento'],
+                'bairro': params['bairro'],
+                'cidade': params['cidade'],
+                'estado': params['estado'],
+                'cep': params['cep'],
+                'telefone': params['telefone'],
+                'codigo_produto': params['codigo_produto'],
+                'quantidade': params['quantidade'],
+                'data_venda': params['data_venda'],
+                'data_compra': params['data_compra'],
+                'forma_pagamento': params['forma_pagamento'],
+                'codigo_loja': params['codigo_loja'],
+                'nome_vendedor': params.get('nome_vendedor', ''),
+                'codigo_vendedor': params['codigo_vendedor']
+            }
+            response = conn.table('vendas').insert(data).execute()
         else:
+            # SQLite insert
+            cursor = conn.cursor()
             cursor.execute("""
                 INSERT INTO vendas (
-                    id_cliente, nome_cliente, data_nascimento, rg, cpf, endereco, numero, complemento, 
-                    bairro, cidade, estado, cep, telefone, codigo_produto, quantidade, data_venda, 
+                    id_cliente, nome_cliente, data_nascimento, rg, cpf, endereco, numero, complemento,
+                    bairro, cidade, estado, cep, telefone, codigo_produto, quantidade, data_venda,
                     data_compra, forma_pagamento, codigo_loja, nome_vendedor, codigo_vendedor
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
-                params['id_cliente'], params['nome_cliente'], params['data_nascimento'], params['rg'], 
-                params['cpf'], params['endereco'], params['numero'], params['complemento'], 
-                params['bairro'], params['cidade'], params['estado'], params['cep'], params['telefone'], 
-                params['codigo_produto'], params['quantidade'], params['data_venda'], params['data_compra'], 
-                params['forma_pagamento'], params['codigo_loja'], params.get('nome_vendedor', ''), 
+                params['id_cliente'], params['nome_cliente'], params['data_nascimento'], params['rg'],
+                params['cpf'], params['endereco'], params['numero'], params['complemento'],
+                params['bairro'], params['cidade'], params['estado'], params['cep'], params['telefone'],
+                params['codigo_produto'], params['quantidade'], params['data_venda'], params['data_compra'],
+                params['forma_pagamento'], params['codigo_loja'], params.get('nome_vendedor', ''),
                 params['codigo_vendedor']
             ))
-        
-        conn.commit()
-        conn.close()
+
+            conn.commit()
+            conn.close()
+
         logger.info(f'✅ Venda inserida - CPF: {params.get("cpf")}, Loja: {params.get("codigo_loja")}')
         return True
-        
+
     except Exception as e:
         logger.error(f'❌ Erro ao inserir venda: {e}')
-        if conn:
+        if conn and db_type != 'supabase':
             conn.close()
         return False
 

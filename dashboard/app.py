@@ -10,8 +10,8 @@ import json
 from logging.handlers import RotatingFileHandler
 
 # 🔹 Configurações do Supabase (com fallback)
-SUPABASE_URL = "https://azczqeoyncpgqtxgdazp.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6Y3pxZW95bmNwZ3F0eGdkYXpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE1OTUyODAsImV4cCI6MjA3NzE3MTI4MH0.D7eTGjp8z6GCKOuWdgV1gW0dqZ8wEzu4U8LyGSV6swE"
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
 supabase = None
 try:
